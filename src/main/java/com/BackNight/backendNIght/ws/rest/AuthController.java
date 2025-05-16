@@ -1,26 +1,20 @@
 package com.BackNight.backendNIght.ws.rest;
 
-import com.BackNight.backendNIght.ws.util.JwtUtil;
 import com.BackNight.backendNIght.ws.dao.ClientesDao;
 import com.BackNight.backendNIght.ws.entity.Clientes;
+import com.BackNight.backendNIght.ws.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/servicio")
-@CrossOrigin(origins = "http://localhost:5173")
-public class ClientesService {
+@RequestMapping("/api/auth")
+@CrossOrigin(origins = "*")
+public class AuthController {
 
     @Autowired
     private ClientesDao clientesDao;
-
-    @PostMapping("/registrar-cliente")
-    public ResponseEntity<Clientes> registrarCliente(@RequestBody Clientes cliente) {
-        Clientes nuevoCliente = clientesDao.registrarCliente(cliente);
-        return ResponseEntity.ok(nuevoCliente);
-    }
 
     @PostMapping("/login-cliente")
     public ResponseEntity<?> loginCliente(@RequestBody Clientes cliente) {
@@ -34,8 +28,6 @@ public class ClientesService {
         return ResponseEntity.ok(new LoginResponse(clienteEncontrado.getUsuarioCliente(), clienteEncontrado.getCorreo(), token));
     }
 
-
-    // Clase interna o pública (puedes moverla a un paquete dto)
     public static class LoginResponse {
         private String usuario;
         private String correo;
@@ -47,11 +39,8 @@ public class ClientesService {
             this.token = token;
         }
 
-        // Getters y setters
         public String getUsuario() { return usuario; }
         public String getCorreo() { return correo; }
         public String getToken() { return token; }
     }
-
-
 }
