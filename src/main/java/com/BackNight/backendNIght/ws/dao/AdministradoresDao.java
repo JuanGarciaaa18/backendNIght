@@ -8,13 +8,13 @@ import org.springframework.stereotype.Service;
 public class AdministradoresDao {
 
     @Autowired
-    private AdministradoresRepository AdministradoresRepository;
+    private static AdministradoresRepository AdministradoresRepository;
 
-    public Administradores registrarAdministrador(Administradores administrador) {
-        return AdministradoresRepository.save(Administradores);
+    public static Administradores registrarAdministrador(Administradores administrador) {
+        return AdministradoresRepository.save(administrador);
     }
 
-    public Administradores loginAdministradores(String usuarioAdministrador, String contrasenaAdministrador) {
-        return AdministradoresRepository.findByUsuarioAdministradorAndContrasenaAdministrador(usuarioAdministraor, contrasenaAdministrador);
+    public static Administradores loginAdministradores(String usuarioAdministrador, String contrasenaAdministrador) {
+        return AdministradoresRepository.findByUsuarioAministradorAndContrasenaAdministrador(usuarioAdministrador, contrasenaAdministrador);
     }
 }
