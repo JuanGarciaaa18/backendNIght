@@ -30,7 +30,7 @@ public class EventosService {
     @GetMapping("eventos-list")
     public ResponseEntity<List<Eventos>> getEventosList() {
         List<Eventos> eventos = eventosDao.obtenerListaEventos();
-        return ResponseEntity.ok(eventos);
+        return ResponseEntity.ok(eventos) ;
     }
 
 
