@@ -2,7 +2,10 @@ package com.BackNight.backendNIght.ws.rest;
 
 import com.BackNight.backendNIght.ws.dao.AdministradoresDao;
 import com.BackNight.backendNIght.ws.entity.Administradores;
+import com.BackNight.backendNIght.ws.entity.Clientes;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,13 +16,23 @@ public class AdministradoresService {
     @Autowired
     private AdministradoresDao administradoresDao;
 
-    @PostMapping("/registrarAdmin")
-    public Administradores registrarAdministrador(@RequestBody Administradores administrador) {
-        return administradoresDao.registrarAdministrador(administrador);
+    @PostMapping("/registrar-administrador")
+    public ResponseEntity<Administradores> registrarAdministrador(@RequestBody Administradores administrador) {
+        Administradores nuevoAdministrador = AdministradoresDao.registrarAdministrador(administrador);
+        return ResponseEntity.ok(nuevoAdministrador);
     }
 
-    @PostMapping("/loginAdmin")
-    public Administradores loginAdministradores(@RequestBody Administradores admin) {
-        return administradoresDao.loginAdministradores(admin.getUsuarioAdmin(), admin.getContrasenaAdmin());
+    @PostMapping("/login-administrador")
+    public ResponseEntity<?> loginAdministradores(@RequestBody Administradores administrador) {
+        System.out.println("Usuario recibido: " + administrador.getUsuarioAdmin());
+        System.out.println("Contraseña recibida: " + administrador.getContrasenaAdmin());
+
+        Administradores administradorEncontrado = AdministradoresDao.loginAdministradores(administrador.getUsuarioAdmin(), administrador.getContrasenaAdmin());
+        if (administradorEncontrado == null) {
+            System.out.println("No se encontró administrador con esas credenciales");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas");
+        }
+        return ResponseEntity.ok(administradorEncontrado);
     }
+
 }
