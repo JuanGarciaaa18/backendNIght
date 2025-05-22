@@ -113,7 +113,7 @@ public class ClientesService {
     }
 
 
-    @PostMapping("/cambiar-contrasena")
+    @PostMapping("/cambiar-contrasena")  // POST, no PUT
     public ResponseEntity<?> cambiarContrasena(@RequestBody Map<String, String> payload) {
         String correo = payload.get("correo");
         String codigo = payload.get("codigo");
@@ -123,18 +123,13 @@ public class ClientesService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Código incorrecto.");
         }
 
-        List<Clientes> clientes = clientesDao.obtenerTodos();
-        Clientes cliente = clientes.stream()
-                .filter(c -> c.getCorreo().equalsIgnoreCase(correo))
-                .findFirst()
-                .orElse(null);
+        Clientes cliente = clientesDao.obtenerPorCorreo(correo);
 
         if (cliente == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado.");
         }
 
-        cliente.setContrasenaCliente(nuevaContrasena);
-        clientesDao.registrarCliente(cliente); // `save` actualiza si ya existe
+        clientesDao.actualizarContrasena(cliente, nuevaContrasena);
 
         return ResponseEntity.ok("Contraseña actualizada correctamente.");
     }

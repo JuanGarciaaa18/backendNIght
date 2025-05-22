@@ -11,9 +11,22 @@ public class Administradores {
     @Column(name = "id_admin")
     private Integer idAdmin;
 
+    @Column(name = "nombre_admin")
     private String nombreAdmin;
+
+    @Column(name = "telefono_admin")
     private String telefonoAdmin;
+
+    @Column(name = "correo_admin")
     private String correoAdmin;
+
+    @Column(name = "usuario_admin")
+    private String usuarioAdmin;
+
+    @Column(name = "contrasena_admin")
+    private String contrasenaAdmin;
+
+    // Getters y Setters
 
     public Integer getIdAdmin() {
         return idAdmin;
@@ -62,12 +75,4 @@ public class Administradores {
     public void setContrasenaAdmin(String contrasenaAdmin) {
         this.contrasenaAdmin = contrasenaAdmin;
     }
-
-    @Column(name = "usuario_admin")
-    private String usuarioAdmin;
-
-    @Column(name = "contrasena_admin")
-    private String contrasenaAdmin;
-
-
 }

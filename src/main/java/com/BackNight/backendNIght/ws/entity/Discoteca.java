@@ -1,8 +1,12 @@
 package com.BackNight.backendNIght.ws.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+
+import java.util.List;
 
 @Entity
 public class Discoteca {
@@ -25,6 +29,10 @@ public class Discoteca {
     private Integer idAdmin;
 
     private String imagen;
+
+    @OneToMany(mappedBy = "discoteca")
+    @JsonBackReference
+    private List<Zona> zonas;
 
     // Getters y Setters
 
