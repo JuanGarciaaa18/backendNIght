@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import com.BackNight.backendNIght.ws.service.EmailService;
 import com.BackNight.backendNIght.ws.util.CodigoVerificacionStore;
+
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -39,11 +41,37 @@ public class ClientesService {
             codigoStore.guardar(nuevoCliente.getCorreo(), codigo);
 
             // Enviar código por correo
+            String contenidoHtml = "<html>" +
+                    "<body style='font-family: Arial, sans-serif; background-color: #1a1a1a; padding: 20px;'>" +
+                    "<div style='max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); padding: 30px; text-align: center;'>" +
+
+                    // Logo
+                    "<img src='https://i.imgur.com/rrMQaVZ.png' alt='Night +' style='width: 120px; margin-bottom: 20px;' />" +
+
+                    // Título
+                    "<h2 style='color: #6A1B9A; font-size: 26px;'>¡Bienvenido a <span style='color:#6A1B9A;'>Night +</span>!</h2>" +
+
+                    // Mensaje principal
+                    "<p style='font-size: 16px; color: #333;'>Gracias por registrarte. Usa el siguiente código para verificar tu cuenta:</p>" +
+                    "<p style='font-size: 32px; font-weight: bold; color: #2196F3; margin: 20px 0;'>" + codigo + "</p>" +
+
+                    // Nota adicional
+                    "<p style='font-size: 14px; color: #777;'>Si no solicitaste este código, puedes ignorar este correo.</p>" +
+
+                    // Firma
+                    "<p style='font-size: 14px; color: #555; margin-top: 30px;'>Atentamente,<br><strong>El equipo de Night +</strong></p>" +
+                    "</div>" +
+                    "</body>" +
+                    "</html>";
+
+
             emailService.enviarEmail(
                     nuevoCliente.getCorreo(),
                     "Código de verificación",
-                    "Tu código de verificación es: " + codigo
+                    contenidoHtml
             );
+
+
 
             Map<String, String> response = new HashMap<>();
             response.put("mensaje", "Cliente registrado. Código enviado.");
@@ -58,6 +86,82 @@ public class ClientesService {
         }
     }
 
+    @PostMapping("/solicitar-recuperacion")
+    public ResponseEntity<?> solicitarRecuperacion(@RequestBody Map<String, String> payload) {
+        String correo = payload.get("correo");
+
+        // Buscar cliente por correo
+        List<Clientes> clientes = clientesDao.obtenerTodos(); // tendrás que implementar este método
+        Clientes cliente = clientes.stream()
+                .filter(c -> c.getCorreo().equalsIgnoreCase(correo))
+                .findFirst()
+                .orElse(null);
+
+        if (cliente == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Correo no registrado.");
+        }
+
+        // Generar código
+        String codigo = String.format("%06d", new Random().nextInt(999999));
+        codigoStore.guardar(correo, codigo);
+
+        // Enviar email
+        String html = "<p>Tu código de recuperación es: <strong>" + codigo + "</strong></p>";
+        emailService.enviarEmail(correo, "Recuperación de contraseña - Night+", html);
+
+        return ResponseEntity.ok("Código de recuperación enviado.");
+    }
+
+
+    @PostMapping("/cambiar-contrasena")
+    public ResponseEntity<?> cambiarContrasena(@RequestBody Map<String, String> payload) {
+        String correo = payload.get("correo");
+        String codigo = payload.get("codigo");
+        String nuevaContrasena = payload.get("nuevaContrasena");
+
+        if (!codigoStore.verificar(correo, codigo)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Código incorrecto.");
+        }
+
+        List<Clientes> clientes = clientesDao.obtenerTodos();
+        Clientes cliente = clientes.stream()
+                .filter(c -> c.getCorreo().equalsIgnoreCase(correo))
+                .findFirst()
+                .orElse(null);
+
+        if (cliente == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado.");
+        }
+
+        cliente.setContrasenaCliente(nuevaContrasena);
+        clientesDao.registrarCliente(cliente); // `save` actualiza si ya existe
+
+        return ResponseEntity.ok("Contraseña actualizada correctamente.");
+    }
+
+    @PostMapping("/verificar-codigo")
+    public ResponseEntity<?> verificarCodigo(@RequestBody Map<String, String> payload) {
+        String correo = payload.get("correo");
+        String codigoIngresado = payload.get("codigo");
+
+        if (correo == null || codigoIngresado == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Correo y código son obligatorios.");
+        }
+
+        String codigoGuardado = codigoStore.obtener(correo);
+
+        if (codigoGuardado == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontró un código para este correo.");
+        }
+
+        if (codigoGuardado.trim().equals(codigoIngresado.trim())) {
+            return ResponseEntity.ok("Código verificado correctamente.");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Código incorrecto.");
+        }
+    }
+
+
 
     @PostMapping("/login-cliente")
     public ResponseEntity<?> loginCliente(@RequestBody Clientes cliente) {
@@ -69,16 +173,12 @@ public class ClientesService {
         String token = JwtUtil.generateToken(
                 clienteEncontrado.getUsuarioCliente(),
                 clienteEncontrado.getCorreo(),
-                clienteEncontrado.getNombre() // ✅ Asegúrate de que no sea null
+                clienteEncontrado.getNombre()
         );
 
-
-
-        return ResponseEntity.ok(new LoginResponse(clienteEncontrado.getUsuarioCliente(), clienteEncontrado.getCorreo(),clienteEncontrado.getNombre() ,token));
+        return ResponseEntity.ok(new LoginResponse(clienteEncontrado.getUsuarioCliente(), clienteEncontrado.getCorreo(), clienteEncontrado.getNombre(), token));
     }
 
-
-    // Clase interna o pública (puedes moverla a un paquete dto)
     public static class LoginResponse {
         private String usuario;
         private String correo;
@@ -97,7 +197,4 @@ public class ClientesService {
         public String getNombre() { return nombre; }
         public String getToken() { return token; }
     }
-
-
-
 }

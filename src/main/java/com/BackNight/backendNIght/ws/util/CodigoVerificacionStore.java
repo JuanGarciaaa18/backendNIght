@@ -16,4 +16,8 @@ public class CodigoVerificacionStore {
     public boolean verificar(String correo, String codigo) {
         return codigos.containsKey(correo) && codigos.get(correo).equals(codigo);
     }
+
+    public String obtener(String correo) {
+        return codigos.get(correo);
+    }
 }

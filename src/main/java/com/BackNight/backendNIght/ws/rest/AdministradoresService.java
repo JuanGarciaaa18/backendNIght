@@ -18,21 +18,23 @@ public class AdministradoresService {
 
     @PostMapping("/registrar-administrador")
     public ResponseEntity<Administradores> registrarAdministrador(@RequestBody Administradores administrador) {
-        Administradores nuevoAdministrador = AdministradoresDao.registrarAdministrador(administrador);
+        Administradores nuevoAdministrador = administradoresDao.registrarAdministrador(administrador);
         return ResponseEntity.ok(nuevoAdministrador);
     }
+
 
     @PostMapping("/login-administrador")
     public ResponseEntity<?> loginAdministradores(@RequestBody Administradores administrador) {
         System.out.println("Usuario recibido: " + administrador.getUsuarioAdmin());
         System.out.println("Contraseña recibida: " + administrador.getContrasenaAdmin());
 
-        Administradores administradorEncontrado = AdministradoresDao.loginAdministradores(administrador.getUsuarioAdmin(), administrador.getContrasenaAdmin());
+        Administradores administradorEncontrado = administradoresDao.loginAdministradores(administrador.getUsuarioAdmin(), administrador.getContrasenaAdmin());
         if (administradorEncontrado == null) {
             System.out.println("No se encontró administrador con esas credenciales");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas");
         }
         return ResponseEntity.ok(administradorEncontrado);
     }
+
 
 }

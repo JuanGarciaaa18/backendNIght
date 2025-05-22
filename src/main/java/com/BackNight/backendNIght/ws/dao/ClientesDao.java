@@ -5,6 +5,8 @@ import com.BackNight.backendNIght.ws.repository.ClientesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class ClientesDao {
 
@@ -18,4 +20,8 @@ public class ClientesDao {
     public Clientes loginCliente(String usuarioCliente, String contrasenaCliente) {
         return clientesRepository.findByUsuarioClienteAndContrasenaCliente(usuarioCliente, contrasenaCliente);
     }
+    public List<Clientes> obtenerTodos() {
+        return clientesRepository.findAll();
+    }
+
 }
