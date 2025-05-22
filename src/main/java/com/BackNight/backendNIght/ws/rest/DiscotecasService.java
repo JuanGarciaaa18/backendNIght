@@ -1,7 +1,6 @@
 package com.BackNight.backendNIght.ws.rest;
 
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,15 +10,15 @@ import com.BackNight.backendNIght.ws.entity.Discoteca;
 
 @RestController
 @RequestMapping("/servicio")
-@CrossOrigin(origins = "https://nightplus.vercel.app") // Permite solicitudes solo desde el frontend
+@CrossOrigin(origins = "http://localhost:5173") // Permite solicitudes desde el frontend
 public class DiscotecasService {
 
     @Autowired
     private DiscotecasDao discotecasDao;
 
     // Obtener una discoteca específica por ID
-    @GetMapping("discotecas/{id}")
-    public ResponseEntity<Discoteca> getDiscoteca(@PathVariable String id) {
+    @GetMapping("discoteca/{id}")
+    public ResponseEntity<Discoteca> getDiscoteca(@PathVariable Integer id) {
         Discoteca discoteca = discotecasDao.consultarDiscotecaIndividual(id);
         if (discoteca == null) {
             return ResponseEntity.notFound().build();
@@ -30,9 +29,17 @@ public class DiscotecasService {
     // Obtener la lista de todas las discotecas
     @GetMapping("discotecas-list")
     public ResponseEntity<List<Discoteca>> getDiscotecaList() {
-        List<Discoteca> discotecas = discotecasDao.obtenerListaDiscotecas();
-        return ResponseEntity.ok(discotecas);
+        try {
+            List<Discoteca> discotecas = discotecasDao.obtenerListaDiscotecas();
+            return ResponseEntity.ok(discotecas);
+        } catch (Exception e) {
+            e.printStackTrace();  // Esto te muestra el error en consola
+            return ResponseEntity.status(500).body(null);
+        }
     }
+
+
+
 
     // Registrar una nueva discoteca
     @PostMapping("guardar")
@@ -53,7 +60,7 @@ public class DiscotecasService {
 
     // Eliminar una discoteca por ID
     @DeleteMapping("eliminar/{id}")
-    public ResponseEntity<Void> eliminarDiscoteca(@PathVariable String id) {
+    public ResponseEntity<Void> eliminarDiscoteca(@PathVariable Integer id) {
         discotecasDao.eliminarDiscoteca(id);
         return ResponseEntity.ok().build();
     }
