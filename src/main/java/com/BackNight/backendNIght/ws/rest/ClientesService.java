@@ -116,13 +116,18 @@ public class ClientesService {
     @PutMapping("/update")
     public ResponseEntity<?> actualizarCliente(@RequestBody Clientes cliente) {
         try {
+            // Validar que el correo no sea nulo
+            if (cliente.getCorreo() == null || cliente.getCorreo().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El correo es obligatorio.");
+            }
+
             // Buscar cliente actual
             Clientes clienteExistente = clientesDao.obtenerPorCorreo(cliente.getCorreo());
             if (clienteExistente == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cliente no encontrado.");
             }
 
-            // Evitar actualizar el usuario_cliente (muy importante)
+            // Evitar actualizar el usuario_cliente
             cliente.setUsuarioCliente(clienteExistente.getUsuarioCliente());
 
             // Si la contraseña viene vacía, mantener la anterior
@@ -136,14 +141,20 @@ public class ClientesService {
             // Asignar el ID correcto
             cliente.setIdCliente(clienteExistente.getIdCliente());
 
-            Clientes actualizado = clientesDao.registrarCliente(cliente); // save
+            // Actualizar cliente
+            Clientes actualizado = clientesDao.registrarCliente(cliente);
+            if (actualizado == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar el cliente.");
+            }
+
             return ResponseEntity.ok(actualizado);
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error actualizando cliente.");
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error actualizando cliente: " + e.getMessage());
         }
     }
-
     @PostMapping("/cambiar-contrasena")  // POST, no PUT
     public ResponseEntity<?> cambiarContrasena(@RequestBody Map<String, String> payload) {
         String correo = payload.get("correo");
