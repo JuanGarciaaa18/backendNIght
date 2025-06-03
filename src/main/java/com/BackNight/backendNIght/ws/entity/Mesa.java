@@ -1,8 +1,10 @@
 package com.BackNight.backendNIght.ws.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
+import java.util.List;
 @Entity
 @Table(name = "mesas")
 public class Mesa {
@@ -17,10 +19,10 @@ public class Mesa {
 
     @ManyToOne
     @JoinColumn(name = "zona_id")
-    @JsonBackReference
+    @JsonIgnoreProperties("mesas")
     private Zona zona;
 
-    // Getters y setters...
+    // getters y setters ...
 
     public Integer getId() {
         return id;

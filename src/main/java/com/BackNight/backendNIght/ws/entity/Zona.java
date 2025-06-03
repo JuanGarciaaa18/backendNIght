@@ -1,5 +1,7 @@
 package com.BackNight.backendNIght.ws.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
@@ -24,15 +26,16 @@ public class Zona {
     @Column(name = "pos_y")
     private Integer posY;
 
+
     @ManyToOne
     @JoinColumn(name = "discoteca_id")
-    @JsonManagedReference
+    @JsonIgnoreProperties("zonas") // evita que al serializar discoteca se intente incluir zonas
     private Discoteca discoteca;
 
-
     @OneToMany(mappedBy = "zona", cascade = CascadeType.ALL)
-    @JsonManagedReference
+    @JsonIgnoreProperties("zona") // evita ciclos con mesas
     private List<Mesa> mesas;
+
 
     // Getters y setters...
 

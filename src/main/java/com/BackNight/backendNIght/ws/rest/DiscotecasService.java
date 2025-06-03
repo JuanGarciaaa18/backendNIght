@@ -1,6 +1,8 @@
 package com.BackNight.backendNIght.ws.rest;
 
 import java.util.List;
+
+import com.BackNight.backendNIght.ws.repository.DiscotecaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +18,7 @@ public class DiscotecasService {
     @Autowired
     private DiscotecasDao discotecasDao;
 
-    // Obtener una discoteca específica por ID
+    // Obtener una discoteca especÃfica por ID
     @GetMapping("discoteca/{id}")
     public ResponseEntity<Discoteca> getDiscoteca(@PathVariable Integer id) {
         Discoteca discoteca = discotecasDao.consultarDiscotecaIndividual(id);
@@ -26,17 +28,17 @@ public class DiscotecasService {
         return ResponseEntity.ok(discoteca);
     }
 
-    // Obtener la lista de todas las discotecas
-    @GetMapping("discotecas-list")
-    public ResponseEntity<List<Discoteca>> getDiscotecaList() {
+    @GetMapping("/discotecas-list")
+    public ResponseEntity<List<Discoteca>> obtenerListaDiscotecas() {
         try {
             List<Discoteca> discotecas = discotecasDao.obtenerListaDiscotecas();
             return ResponseEntity.ok(discotecas);
         } catch (Exception e) {
-            e.printStackTrace();  // Esto te muestra el error en consola
-            return ResponseEntity.status(500).body(null);
+            return ResponseEntity.status(500).build();
         }
     }
+
+
 
 
 

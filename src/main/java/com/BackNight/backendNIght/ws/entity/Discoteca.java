@@ -20,7 +20,7 @@ public class Discoteca {
 
     private String ubicacion;
 
-    @Column(name = "capacidadDisco")
+    @Column(name = "capacidad")
     private Integer capacidad;
 
     private String horario;
@@ -99,4 +99,12 @@ public class Discoteca {
     public void setImagen(String imagen) {
         this.imagen = imagen;
     }
+    public List<Zona> getZonas() {
+        return zonas;
+    }
+
+    public void setZonas(List<Zona> zonas) {
+        this.zonas = zonas;
+    }
+
 }

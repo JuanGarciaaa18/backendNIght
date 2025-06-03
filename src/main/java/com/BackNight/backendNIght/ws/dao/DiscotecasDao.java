@@ -18,13 +18,28 @@ public class DiscotecasDao {
 
     public List<Discoteca> obtenerListaDiscotecas() {
         try {
-            return discotecaRepository.findAll();
+            List<Discoteca> discotecas = discotecaRepository.findAll();
+
+            // Romper ciclos de referencias para evitar errores JSON
+            for (Discoteca d : discotecas) {
+                if (d.getZonas() != null) {
+                    d.getZonas().forEach(z -> {
+                        z.setDiscoteca(null); // evita ciclo con discoteca
+                        if (z.getMesas() != null) {
+                            z.getMesas().forEach(m -> m.setZona(null)); // evita ciclo con zona
+                        }
+                    });
+                }
+            }
+
+            return discotecas;
         } catch (Exception e) {
             System.out.println("Error al obtener la lista de discotecas: " + e.getMessage());
-            e.printStackTrace(); // Esto te mostrará el error en consola
-            throw e;  // Re-lanza para que el controlador también se entere
+            e.printStackTrace();
+            throw e;
         }
     }
+
 
 
     public Discoteca registrarDiscoteca(Discoteca discoteca) {

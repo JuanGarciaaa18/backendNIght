@@ -6,6 +6,7 @@ import com.BackNight.backendNIght.ws.entity.Clientes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import com.BackNight.backendNIght.ws.service.EmailService;
 import com.BackNight.backendNIght.ws.util.CodigoVerificacionStore;
@@ -112,6 +113,36 @@ public class ClientesService {
         return ResponseEntity.ok("Código de recuperación enviado.");
     }
 
+    @PutMapping("/update")
+    public ResponseEntity<?> actualizarCliente(@RequestBody Clientes cliente) {
+        try {
+            // Buscar cliente actual
+            Clientes clienteExistente = clientesDao.obtenerPorCorreo(cliente.getCorreo());
+            if (clienteExistente == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cliente no encontrado.");
+            }
+
+            // Evitar actualizar el usuario_cliente (muy importante)
+            cliente.setUsuarioCliente(clienteExistente.getUsuarioCliente());
+
+            // Si la contraseña viene vacía, mantener la anterior
+            if (cliente.getContrasenaCliente() == null || cliente.getContrasenaCliente().isEmpty()) {
+                cliente.setContrasenaCliente(clienteExistente.getContrasenaCliente());
+            } else {
+                // Encriptar nueva contraseña
+                cliente.setContrasenaCliente(new BCryptPasswordEncoder().encode(cliente.getContrasenaCliente()));
+            }
+
+            // Asignar el ID correcto
+            cliente.setIdCliente(clienteExistente.getIdCliente());
+
+            Clientes actualizado = clientesDao.registrarCliente(cliente); // save
+            return ResponseEntity.ok(actualizado);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error actualizando cliente.");
+        }
+    }
 
     @PostMapping("/cambiar-contrasena")  // POST, no PUT
     public ResponseEntity<?> cambiarContrasena(@RequestBody Map<String, String> payload) {
