@@ -13,6 +13,7 @@ public class ClientesDao {
 
     @Autowired
     private ClientesRepository clientesRepository;
+
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
@@ -20,15 +21,19 @@ public class ClientesDao {
         cliente.setContrasenaCliente(passwordEncoder.encode(cliente.getContrasenaCliente()));
         return clientesRepository.save(cliente);
     }
+
     public Clientes obtenerPorCorreo(String correo) {
         return clientesRepository.findByCorreo(correo);
+    }
+
+    public Clientes obtenerPorUsuario(String usuarioCliente) {
+        return clientesRepository.findByUsuarioCliente(usuarioCliente);
     }
 
     public Clientes actualizarContrasena(Clientes cliente, String nuevaContrasena) {
         cliente.setContrasenaCliente(passwordEncoder.encode(nuevaContrasena));
         return clientesRepository.save(cliente);
     }
-
 
     public Clientes loginCliente(String usuarioCliente, String contrasenaCliente) {
         Clientes cliente = clientesRepository.findByUsuarioCliente(usuarioCliente);
@@ -37,8 +42,14 @@ public class ClientesDao {
         }
         return null;
     }
+
     public List<Clientes> obtenerTodos() {
         return clientesRepository.findAll();
+    }
+
+    public Clientes actualizarCliente(Clientes cliente) {
+        // Aquí NO volvemos a encriptar la contraseña, porque ya fue encriptada antes del llamado.
+        return clientesRepository.save(cliente);
     }
 
 }

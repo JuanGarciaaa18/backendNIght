@@ -30,49 +30,30 @@ public class ClientesService {
     @Autowired
     private CodigoVerificacionStore codigoStore;
 
+    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     @PostMapping("/registrar-cliente")
     public ResponseEntity<?> registrarCliente(@RequestBody Clientes cliente) {
         try {
             Clientes nuevoCliente = clientesDao.registrarCliente(cliente);
 
-            // Generar código de verificación
             String codigo = String.format("%06d", new Random().nextInt(999999));
-
-            // Guardar código
             codigoStore.guardar(nuevoCliente.getCorreo(), codigo);
 
-            // Enviar código por correo
             String contenidoHtml = "<html>" +
                     "<body style='font-family: Arial, sans-serif; background-color: #1a1a1a; padding: 20px;'>" +
                     "<div style='max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); padding: 30px; text-align: center;'>" +
-
-                    // Logo
                     "<img src='https://i.imgur.com/rrMQaVZ.png' alt='Night +' style='width: 120px; margin-bottom: 20px;' />" +
-
-                    // Título
                     "<h2 style='color: #6A1B9A; font-size: 26px;'>¡Bienvenido a <span style='color:#6A1B9A;'>Night +</span>!</h2>" +
-
-                    // Mensaje principal
                     "<p style='font-size: 16px; color: #333;'>Gracias por registrarte. Usa el siguiente código para verificar tu cuenta:</p>" +
                     "<p style='font-size: 32px; font-weight: bold; color: #2196F3; margin: 20px 0;'>" + codigo + "</p>" +
-
-                    // Nota adicional
                     "<p style='font-size: 14px; color: #777;'>Si no solicitaste este código, puedes ignorar este correo.</p>" +
-
-                    // Firma
                     "<p style='font-size: 14px; color: #555; margin-top: 30px;'>Atentamente,<br><strong>El equipo de Night +</strong></p>" +
                     "</div>" +
                     "</body>" +
                     "</html>";
 
-
-            emailService.enviarEmail(
-                    nuevoCliente.getCorreo(),
-                    "Código de verificación",
-                    contenidoHtml
-            );
-
-
+            emailService.enviarEmail(nuevoCliente.getCorreo(), "Código de verificación", contenidoHtml);
 
             Map<String, String> response = new HashMap<>();
             response.put("mensaje", "Cliente registrado. Código enviado.");
@@ -86,13 +67,45 @@ public class ClientesService {
                     .body("Error al registrar cliente: " + e.getMessage());
         }
     }
+    @PutMapping("/update")
+    public ResponseEntity<?> actualizarCliente(@RequestBody Clientes cliente) {
+        try {
+            if (cliente.getCorreo() == null || cliente.getCorreo().isBlank()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El correo es obligatorio.");
+            }
+
+            Clientes clienteExistente = clientesDao.obtenerPorCorreo(cliente.getCorreo());
+            if (clienteExistente == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cliente no encontrado.");
+            }
+
+            cliente.setUsuarioCliente(clienteExistente.getUsuarioCliente());
+            cliente.setIdCliente(clienteExistente.getIdCliente());
+
+            if (cliente.getContrasenaCliente() != null && !cliente.getContrasenaCliente().isBlank()) {
+                cliente.setContrasenaCliente(passwordEncoder.encode(cliente.getContrasenaCliente()));
+            } else {
+                cliente.setContrasenaCliente(clienteExistente.getContrasenaCliente());
+            }
+
+            // Aquí imprimimos la contraseña que se va a guardar
+            System.out.println("Contraseña que se guardará: " + cliente.getContrasenaCliente());
+
+            Clientes actualizado = clientesDao.actualizarCliente(cliente); // ✅ Correcto
+
+            return ResponseEntity.ok(actualizado);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar: " + e.getMessage());
+        }
+    }
+
 
     @PostMapping("/solicitar-recuperacion")
     public ResponseEntity<?> solicitarRecuperacion(@RequestBody Map<String, String> payload) {
         String correo = payload.get("correo");
 
-        // Buscar cliente por correo
-        List<Clientes> clientes = clientesDao.obtenerTodos(); // tendrás que implementar este método
+        List<Clientes> clientes = clientesDao.obtenerTodos();
         Clientes cliente = clientes.stream()
                 .filter(c -> c.getCorreo().equalsIgnoreCase(correo))
                 .findFirst()
@@ -102,60 +115,16 @@ public class ClientesService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Correo no registrado.");
         }
 
-        // Generar código
         String codigo = String.format("%06d", new Random().nextInt(999999));
         codigoStore.guardar(correo, codigo);
 
-        // Enviar email
         String html = "<p>Tu código de recuperación es: <strong>" + codigo + "</strong></p>";
         emailService.enviarEmail(correo, "Recuperación de contraseña - Night+", html);
 
         return ResponseEntity.ok("Código de recuperación enviado.");
     }
 
-    @PutMapping("/update")
-    public ResponseEntity<?> actualizarCliente(@RequestBody Clientes cliente) {
-        try {
-            // Validar que el correo no sea nulo
-            if (cliente.getCorreo() == null || cliente.getCorreo().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El correo es obligatorio.");
-            }
-
-            // Buscar cliente actual
-            Clientes clienteExistente = clientesDao.obtenerPorCorreo(cliente.getCorreo());
-            if (clienteExistente == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cliente no encontrado.");
-            }
-
-            // Evitar actualizar el usuario_cliente
-            cliente.setUsuarioCliente(clienteExistente.getUsuarioCliente());
-
-            // Si la contraseña viene vacía, mantener la anterior
-            if (cliente.getContrasenaCliente() == null || cliente.getContrasenaCliente().isEmpty()) {
-                cliente.setContrasenaCliente(clienteExistente.getContrasenaCliente());
-            } else {
-                // Encriptar nueva contraseña
-                cliente.setContrasenaCliente(new BCryptPasswordEncoder().encode(cliente.getContrasenaCliente()));
-            }
-
-            // Asignar el ID correcto
-            cliente.setIdCliente(clienteExistente.getIdCliente());
-
-            // Actualizar cliente
-            Clientes actualizado = clientesDao.registrarCliente(cliente);
-            if (actualizado == null) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar el cliente.");
-            }
-
-            return ResponseEntity.ok(actualizado);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error actualizando cliente: " + e.getMessage());
-        }
-    }
-    @PostMapping("/cambiar-contrasena")  // POST, no PUT
+    @PostMapping("/cambiar-contrasena")
     public ResponseEntity<?> cambiarContrasena(@RequestBody Map<String, String> payload) {
         String correo = payload.get("correo");
         String codigo = payload.get("codigo");
@@ -198,12 +167,10 @@ public class ClientesService {
         }
     }
 
-
-
     @PostMapping("/login-cliente")
     public ResponseEntity<?> loginCliente(@RequestBody Clientes cliente) {
-        Clientes clienteEncontrado = clientesDao.loginCliente(cliente.getUsuarioCliente(), cliente.getContrasenaCliente());
-        if (clienteEncontrado == null) {
+        Clientes clienteEncontrado = clientesDao.obtenerPorUsuario(cliente.getUsuarioCliente());
+        if (clienteEncontrado == null || !passwordEncoder.matches(cliente.getContrasenaCliente(), clienteEncontrado.getContrasenaCliente())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas");
         }
 
@@ -213,7 +180,12 @@ public class ClientesService {
                 clienteEncontrado.getNombre()
         );
 
-        return ResponseEntity.ok(new LoginResponse(clienteEncontrado.getUsuarioCliente(), clienteEncontrado.getCorreo(), clienteEncontrado.getNombre(), token));
+        return ResponseEntity.ok(new LoginResponse(
+                clienteEncontrado.getUsuarioCliente(),
+                clienteEncontrado.getCorreo(),
+                clienteEncontrado.getNombre(),
+                token
+        ));
     }
 
     public static class LoginResponse {
