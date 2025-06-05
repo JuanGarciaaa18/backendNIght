@@ -26,7 +26,25 @@ public class Administradores {
     @Column(name = "contrasena_admin")
     private String contrasenaAdmin;
 
+
     // Getters y Setters
+
+
+    public String getContrasenaAdmin() {
+        return contrasenaAdmin;
+    }
+
+    public void setContrasenaAdmin(String contrasenaAdmin) {
+        this.contrasenaAdmin = contrasenaAdmin;
+    }
+
+    public String getCorreoAdmin() {
+        return correoAdmin;
+    }
+
+    public void setCorreoAdmin(String correoAdmin) {
+        this.correoAdmin = correoAdmin;
+    }
 
     public Integer getIdAdmin() {
         return idAdmin;
@@ -52,27 +70,11 @@ public class Administradores {
         this.telefonoAdmin = telefonoAdmin;
     }
 
-    public String getCorreoAdmin() {
-        return correoAdmin;
-    }
-
-    public void setCorreoAdmin(String correoAdmin) {
-        this.correoAdmin = correoAdmin;
-    }
-
     public String getUsuarioAdmin() {
         return usuarioAdmin;
     }
 
     public void setUsuarioAdmin(String usuarioAdmin) {
         this.usuarioAdmin = usuarioAdmin;
-    }
-
-    public String getContrasenaAdmin() {
-        return contrasenaAdmin;
-    }
-
-    public void setContrasenaAdmin(String contrasenaAdmin) {
-        this.contrasenaAdmin = contrasenaAdmin;
     }
 }

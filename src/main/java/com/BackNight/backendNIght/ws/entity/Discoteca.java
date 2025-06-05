@@ -1,10 +1,7 @@
 package com.BackNight.backendNIght.ws.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 
 import java.util.List;
 
@@ -15,9 +12,7 @@ public class Discoteca {
     private Integer nit;
 
     private String nombre;
-
     private String restricciones;
-
     private String ubicacion;
 
     @Column(name = "capacidad")
@@ -34,7 +29,37 @@ public class Discoteca {
     @JsonBackReference
     private List<Zona> zonas;
 
-    // Getters y Setters
+    public Integer getCapacidad() {
+        return capacidad;
+    }
+
+    public void setCapacidad(Integer capacidad) {
+        this.capacidad = capacidad;
+    }
+
+    public String getHorario() {
+        return horario;
+    }
+
+    public void setHorario(String horario) {
+        this.horario = horario;
+    }
+
+    public Integer getIdAdmin() {
+        return idAdmin;
+    }
+
+    public void setIdAdmin(Integer idAdmin) {
+        this.idAdmin = idAdmin;
+    }
+
+    public String getImagen() {
+        return imagen;
+    }
+
+    public void setImagen(String imagen) {
+        this.imagen = imagen;
+    }
 
     public Integer getNit() {
         return nit;
@@ -68,37 +93,6 @@ public class Discoteca {
         this.ubicacion = ubicacion;
     }
 
-    public Integer getCapacidad() {
-        return capacidad;
-    }
-
-    public void setCapacidad(Integer capacidad) {
-        this.capacidad = capacidad;
-    }
-
-    public String getHorario() {
-        return horario;
-    }
-
-    public void setHorario(String horario) {
-        this.horario = horario;
-    }
-
-    public Integer getIdAdmin() {
-        return idAdmin;
-    }
-
-    public void setIdAdmin(Integer idAdmin) {
-        this.idAdmin = idAdmin;
-    }
-
-    public String getImagen() {
-        return imagen;
-    }
-
-    public void setImagen(String imagen) {
-        this.imagen = imagen;
-    }
     public List<Zona> getZonas() {
         return zonas;
     }
@@ -106,5 +100,4 @@ public class Discoteca {
     public void setZonas(List<Zona> zonas) {
         this.zonas = zonas;
     }
-
 }
