@@ -23,6 +23,7 @@ public class Discoteca {
     @Column(name = "id_admin")
     private Integer idAdmin;
 
+    @Column(columnDefinition = "LONGTEXT")
     private String imagen;
 
     @OneToMany(mappedBy = "discoteca")

@@ -35,10 +35,16 @@ public class DiscotecasService {
         }
     }
 
+    // Recibe JSON con imagen Base64 en el campo 'imagen'
     @PostMapping("/guardar")
     public ResponseEntity<Discoteca> registrarDiscoteca(@RequestBody Discoteca discoteca) {
-        Discoteca nuevaDiscoteca = discotecasDao.registrarDiscoteca(discoteca);
-        return ResponseEntity.ok(nuevaDiscoteca);
+        try {
+            Discoteca nuevaDiscoteca = discotecasDao.registrarDiscoteca(discoteca);
+            return ResponseEntity.ok(nuevaDiscoteca);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
     }
 
     @PutMapping("/actualizar")
