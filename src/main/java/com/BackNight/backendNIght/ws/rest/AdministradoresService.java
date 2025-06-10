@@ -48,6 +48,15 @@
             }
         }
 
+        @GetMapping("/admins")
+        public ResponseEntity<?> obtenerTodosLosAdministradores() {
+            try {
+                return ResponseEntity.ok(administradoresDao.obtenerTodos());
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Error al obtener administradores: " + e.getMessage()));
+            }
+        }
 
         @PostMapping("/login-administrador")
         public ResponseEntity<?> loginAdministradores(@RequestBody Administradores administrador) {

@@ -47,14 +47,17 @@ public class DiscotecasService {
         }
     }
 
-    @PutMapping("/actualizar")
-    public ResponseEntity<Discoteca> actualizarDiscoteca(@RequestBody Discoteca discoteca) {
+    @PutMapping("/actualizar/{nit}")
+    public ResponseEntity<Discoteca> actualizarDiscoteca(@PathVariable Integer nit, @RequestBody Discoteca discoteca) {
+        discoteca.setNit(nit); // Establece el NIT recibido como identificador
         Discoteca discotecaActualizada = discotecasDao.actualizarDiscoteca(discoteca);
         if (discotecaActualizada == null) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(discotecaActualizada);
     }
+
+
 
     @DeleteMapping("/eliminar/{id}")
     public ResponseEntity<Void> eliminarDiscoteca(@PathVariable Integer id) {
