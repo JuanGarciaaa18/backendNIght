@@ -6,8 +6,8 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
+@Table(name = "discoteca") // << Asegúrate que coincida con el nombre en la base de datos
 public class Discoteca {
-
     @Id
     private Integer nit;
 
@@ -26,17 +26,9 @@ public class Discoteca {
     @Column(columnDefinition = "LONGTEXT")
     private String imagen;
 
-    @OneToMany(mappedBy = "discoteca")
+    @OneToMany(mappedBy = "discoteca", cascade = CascadeType.ALL)
     @JsonBackReference
     private List<Zona> zonas;
-
-    public Integer getCapacidad() {
-        return capacidad;
-    }
-
-    public void setCapacidad(Integer capacidad) {
-        this.capacidad = capacidad;
-    }
 
     public String getHorario() {
         return horario;
@@ -44,6 +36,14 @@ public class Discoteca {
 
     public void setHorario(String horario) {
         this.horario = horario;
+    }
+
+    public Integer getCapacidad() {
+        return capacidad;
+    }
+
+    public void setCapacidad(Integer capacidad) {
+        this.capacidad = capacidad;
     }
 
     public Integer getIdAdmin() {
@@ -62,20 +62,20 @@ public class Discoteca {
         this.imagen = imagen;
     }
 
-    public Integer getNit() {
-        return nit;
-    }
-
-    public void setNit(Integer nit) {
-        this.nit = nit;
-    }
-
     public String getNombre() {
         return nombre;
     }
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
+    }
+
+    public Integer getNit() {
+        return nit;
+    }
+
+    public void setNit(Integer nit) {
+        this.nit = nit;
     }
 
     public String getRestricciones() {
