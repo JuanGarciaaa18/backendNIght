@@ -1,12 +1,14 @@
 package com.BackNight.backendNIght.ws.entity;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+
 @Entity
-@Table(name = "eventos")
+@Table(name = "eventos") // Asegúrate que la tabla en la DB sea 'eventos'
 public class Evento {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idEvento;
+    private Integer idEvento; // Cambiado a Integer para consistencia
 
     private String nombreEvento;
     private String descripcion;
@@ -20,9 +22,11 @@ public class Evento {
     private Discoteca discoteca;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_admin")
+    @JoinColumn(name = "id_admin") // Columna de la clave foránea en la tabla 'eventos'
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private Administradores administrador;
+    private Administradores administrador; // Ya existía, se mantiene
+
+    // --- Getters y Setters ---
 
     public Administradores getAdministrador() {
         return administrador;
@@ -65,10 +69,10 @@ public class Evento {
     }
 
     public Integer getIdEvento() {
-        return Math.toIntExact(idEvento);
+        return idEvento;
     }
 
-    public void setIdEvento(Long idEvento) {
+    public void setIdEvento(Integer idEvento) {
         this.idEvento = idEvento;
     }
 

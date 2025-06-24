@@ -1,6 +1,8 @@
 package com.BackNight.backendNIght.ws.entity;
 
 import jakarta.persistence.*;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "administrador")
@@ -26,25 +28,19 @@ public class Administradores {
     @Column(name = "contrasena_admin")
     private String contrasenaAdmin;
 
+    // Relación One-to-Many con Discoteca
+    // 'mappedBy' indica el campo en la entidad Discoteca que posee la relación (administrador)
+    // CascadeType.ALL significa que las operaciones (persist, remove, merge) se propagarán
+    // orphanRemoval = true elimina las discotecas si se desvinculan del admin
+    @OneToMany(mappedBy = "administrador", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Discoteca> discotecas = new ArrayList<>();
 
-    // Getters y Setters
+    // Relación One-to-Many con Evento
+    // 'mappedBy' indica el campo en la entidad Evento que posee la relación (administrador)
+    @OneToMany(mappedBy = "administrador", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Evento> eventos = new ArrayList<>();
 
-
-    public String getContrasenaAdmin() {
-        return contrasenaAdmin;
-    }
-
-    public void setContrasenaAdmin(String contrasenaAdmin) {
-        this.contrasenaAdmin = contrasenaAdmin;
-    }
-
-    public String getCorreoAdmin() {
-        return correoAdmin;
-    }
-
-    public void setCorreoAdmin(String correoAdmin) {
-        this.correoAdmin = correoAdmin;
-    }
+    // --- Getters y Setters ---
 
     public Integer getIdAdmin() {
         return idAdmin;
@@ -70,11 +66,43 @@ public class Administradores {
         this.telefonoAdmin = telefonoAdmin;
     }
 
+    public String getCorreoAdmin() {
+        return correoAdmin;
+    }
+
+    public void setCorreoAdmin(String correoAdmin) {
+        this.correoAdmin = correoAdmin;
+    }
+
     public String getUsuarioAdmin() {
         return usuarioAdmin;
     }
 
     public void setUsuarioAdmin(String usuarioAdmin) {
         this.usuarioAdmin = usuarioAdmin;
+    }
+
+    public String getContrasenaAdmin() {
+        return contrasenaAdmin;
+    }
+
+    public void setContrasenaAdmin(String contrasenaAdmin) {
+        this.contrasenaAdmin = contrasenaAdmin;
+    }
+
+    public List<Discoteca> getDiscotecas() {
+        return discotecas;
+    }
+
+    public void setDiscotecas(List<Discoteca> discotecas) {
+        this.discotecas = discotecas;
+    }
+
+    public List<Evento> getEventos() {
+        return eventos;
+    }
+
+    public void setEventos(List<Evento> eventos) {
+        this.eventos = eventos;
     }
 }

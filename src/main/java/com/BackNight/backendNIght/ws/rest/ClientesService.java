@@ -167,43 +167,53 @@ public class ClientesService {
         }
     }
 
-    @PostMapping("/login-cliente")
-    public ResponseEntity<?> loginCliente(@RequestBody Clientes cliente) {
-        Clientes clienteEncontrado = clientesDao.obtenerPorUsuario(cliente.getUsuarioCliente());
-        if (clienteEncontrado == null || !passwordEncoder.matches(cliente.getContrasenaCliente(), clienteEncontrado.getContrasenaCliente())) {
+
+    @PostMapping("/login-cliente") // Or whatever your client login endpoint is named
+    public ResponseEntity<?> loginClientes(@RequestBody Clientes cliente) {
+        // Assume 'clientesDao.loginClientes' returns a Cliente entity upon successful authentication
+        Clientes encontrado = clientesDao.loginClientes(cliente.getUsuarioCliente(), cliente.getContrasenaCliente());
+
+        if (encontrado == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas");
         }
 
+        // --- THIS IS THE CRITICAL LINE TO CORRECT ---
         String token = JwtUtil.generateToken(
-                clienteEncontrado.getUsuarioCliente(),
-                clienteEncontrado.getCorreo(),
-                clienteEncontrado.getNombre()
+                encontrado.getUsuarioCliente(),  // First String argument
+                encontrado.getCorreo(),         // Second String argument
+                encontrado.getNombre(),         // Third String argument
+                encontrado.getIdCliente()       // <-- Fourth Integer argument (pass the client's ID)
         );
 
-        return ResponseEntity.ok(new LoginResponse(
-                clienteEncontrado.getUsuarioCliente(),
-                clienteEncontrado.getCorreo(),
-                clienteEncontrado.getNombre(),
-                token
+        // ... rest of your login logic, including returning the LoginResponse for clients
+        return ResponseEntity.ok(new ClienteLoginResponse(
+                encontrado.getUsuarioCliente(),
+                encontrado.getCorreo(),
+                encontrado.getNombre(),
+                token,
+                encontrado.getIdCliente()
         ));
     }
 
-    public static class LoginResponse {
-        private String usuario;
-        private String correo;
-        private String nombre;
-        private String token;
+    // ... And ensure your ClienteLoginResponse class also includes idCliente
+// (example from previous turn for reference):
+    public static class ClienteLoginResponse {
+        private String usuario, correo, nombre, token;
+        private Integer idCliente;
 
-        public LoginResponse(String usuario, String correo, String nombre, String token) {
+        public ClienteLoginResponse(String usuario, String correo, String nombre, String token, Integer idCliente) {
             this.usuario = usuario;
             this.correo = correo;
             this.nombre = nombre;
             this.token = token;
+            this.idCliente = idCliente;
         }
 
         public String getUsuario() { return usuario; }
         public String getCorreo() { return correo; }
         public String getNombre() { return nombre; }
         public String getToken() { return token; }
+        public Integer getIdCliente() { return idCliente; }
     }
 }
+// ...

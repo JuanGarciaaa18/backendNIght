@@ -6,9 +6,10 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
-@Table(name = "discoteca") // << Asegúrate que coincida con el nombre en la base de datos
+@Table(name = "discoteca")
 public class Discoteca {
     @Id
+    @Column(name = "nit") // Explicitly map to 'nit' column
     private Integer nit;
 
     private String nombre;
@@ -20,8 +21,10 @@ public class Discoteca {
 
     private String horario;
 
-    @Column(name = "id_admin")
-    private Integer idAdmin;
+    // Cambiado de Integer idAdmin a una relación Many-to-One con Administradores
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_admin") // Columna de la clave foránea en la tabla 'discoteca'
+    private Administradores administrador;
 
     @Column(columnDefinition = "LONGTEXT")
     private String imagen;
@@ -29,6 +32,8 @@ public class Discoteca {
     @OneToMany(mappedBy = "discoteca", cascade = CascadeType.ALL)
     @JsonBackReference
     private List<Zona> zonas;
+
+    // --- Getters y Setters ---
 
     public String getHorario() {
         return horario;
@@ -46,12 +51,13 @@ public class Discoteca {
         this.capacidad = capacidad;
     }
 
-    public Integer getIdAdmin() {
-        return idAdmin;
+    // Ya no necesitas getIdAdmin/setIdAdmin directamente, ahora es via getAdministrador/setAdministrador
+    public Administradores getAdministrador() {
+        return administrador;
     }
 
-    public void setIdAdmin(Integer idAdmin) {
-        this.idAdmin = idAdmin;
+    public void setAdministrador(Administradores administrador) {
+        this.administrador = administrador;
     }
 
     public String getImagen() {
