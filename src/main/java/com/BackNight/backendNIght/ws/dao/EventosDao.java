@@ -66,6 +66,26 @@ public class EventosDao {
     }
 
     /**
+     * Consulta una lista de eventos por el NIT de la discoteca a la que pertenecen.
+     * @param nitDiscoteca El NIT de la discoteca.
+     * @return Una lista de eventos asociados a esa discoteca.
+     */
+    public List<Evento> consultarEventosPorDiscotecaNit(Integer nitDiscoteca) {
+        // ¡CAMBIO CLAVE AQUÍ! Asegúrate de que esto sea findByDiscoteca_Nit
+        List<Evento> eventos = eventoRepository.findByDiscoteca_Nit(nitDiscoteca); // <-- ¡CORREGIDO!
+        // Limpiar referencias para evitar ciclos JSON
+        for (Evento e : eventos) {
+            e.setAdministrador(null);
+            if (e.getDiscoteca() != null) {
+                e.getDiscoteca().setAdministrador(null);
+                e.getDiscoteca().setZonas(null);
+            }
+        }
+        return eventos;
+    }
+
+
+    /**
      * Registra un nuevo evento, asociándolo con un administrador.
      * @param evento El evento a registrar.
      * @param idAdmin El ID del administrador que registra el evento.
