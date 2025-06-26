@@ -25,7 +25,11 @@ public class EventosDao {
      * @return El evento encontrado o null si no existe.
      */
     public Evento consultarEventoIndividual(Integer id) {
-        return eventoRepository.findById(id).orElse(null);
+        Evento evento = eventoRepository.findById(id).orElse(null);
+        if (evento != null) {
+            System.out.println("DEBUG DAO: consultarEventoIndividual - Evento ID: " + evento.getIdEvento() + ", Imagen Longitud: " + (evento.getImagen() != null ? evento.getImagen().length() : "null"));
+        }
+        return evento;
     }
 
     /**
@@ -36,12 +40,12 @@ public class EventosDao {
      */
     public List<Evento> obtenerListaEventosPorAdmin(Integer idAdmin) {
         List<Evento> eventos = eventoRepository.findByAdministrador_IdAdmin(idAdmin);
-        // Limpiar referencias para evitar ciclos JSON si es necesario
         for (Evento e : eventos) {
-            e.setAdministrador(null); // No enviar el administrador completo para evitar recursión
+            System.out.println("DEBUG DAO: obtenerListaEventosPorAdmin - Evento ID: " + e.getIdEvento() + ", Imagen Longitud: " + (e.getImagen() != null ? e.getImagen().length() : "null"));
+            e.setAdministrador(null);
             if (e.getDiscoteca() != null) {
-                e.getDiscoteca().setAdministrador(null); // También limpiar la referencia al admin en la discoteca del evento
-                e.getDiscoteca().setZonas(null); // Y zonas si es necesario
+                e.getDiscoteca().setAdministrador(null);
+                e.getDiscoteca().setZonas(null);
             }
         }
         return eventos;
@@ -54,9 +58,9 @@ public class EventosDao {
      */
     public List<Evento> obtenerTodosEventos() {
         List<Evento> eventos = eventoRepository.findAll();
-        // Limpiar referencias para evitar ciclos JSON si es necesario
         for (Evento e : eventos) {
-            e.setAdministrador(null); // No enviar el administrador completo en la lista pública
+            System.out.println("DEBUG DAO: obtenerTodosEventos - Evento ID: " + e.getIdEvento() + ", Imagen Longitud: " + (e.getImagen() != null ? e.getImagen().length() : "null"));
+            e.setAdministrador(null);
             if (e.getDiscoteca() != null) {
                 e.getDiscoteca().setAdministrador(null);
                 e.getDiscoteca().setZonas(null);
@@ -71,10 +75,9 @@ public class EventosDao {
      * @return Una lista de eventos asociados a esa discoteca.
      */
     public List<Evento> consultarEventosPorDiscotecaNit(Integer nitDiscoteca) {
-        // ¡CAMBIO CLAVE AQUÍ! Asegúrate de que esto sea findByDiscoteca_Nit
-        List<Evento> eventos = eventoRepository.findByDiscoteca_Nit(nitDiscoteca); // <-- ¡CORREGIDO!
-        // Limpiar referencias para evitar ciclos JSON
+        List<Evento> eventos = eventoRepository.findByDiscoteca_Nit(nitDiscoteca);
         for (Evento e : eventos) {
+            System.out.println("DEBUG DAO: consultarEventosPorDiscotecaNit - Evento ID: " + e.getIdEvento() + ", Imagen Longitud: " + (e.getImagen() != null ? e.getImagen().length() : "null"));
             e.setAdministrador(null);
             if (e.getDiscoteca() != null) {
                 e.getDiscoteca().setAdministrador(null);
@@ -83,7 +86,6 @@ public class EventosDao {
         }
         return eventos;
     }
-
 
     /**
      * Registra un nuevo evento, asociándolo con un administrador.
@@ -95,8 +97,12 @@ public class EventosDao {
     public Evento registrarEvento(Evento evento, Integer idAdmin) {
         Administradores admin = administradoresRepository.findById(idAdmin)
                 .orElseThrow(() -> new RuntimeException("Administrador no encontrado con ID: " + idAdmin));
-        evento.setAdministrador(admin); // Asigna el administrador
-        return eventoRepository.save(evento);
+        evento.setAdministrador(admin);
+
+        System.out.println("DEBUG DAO: registrarEvento - Recibida imagen Base64 para guardar, longitud: " + (evento.getImagen() != null ? evento.getImagen().length() : "null"));
+        Evento savedEvento = eventoRepository.save(evento);
+        System.out.println("DEBUG DAO: registrarEvento - Imagen Base64 guardada, longitud: " + (savedEvento.getImagen() != null ? savedEvento.getImagen().length() : "null"));
+        return savedEvento;
     }
 
     /**
@@ -109,18 +115,24 @@ public class EventosDao {
         Optional<Evento> existingEventoOpt = eventoRepository.findById(evento.getIdEvento());
         if (existingEventoOpt.isPresent()) {
             Evento existingEvento = existingEventoOpt.get();
-            // Asegurarse de que el administrador del evento coincida con el que intenta actualizar
             if (existingEvento.getAdministrador().getIdAdmin().equals(idAdmin)) {
-                evento.setAdministrador(existingEvento.getAdministrador()); // Mantener el mismo admin
+                // Si la imagen nueva es null, mantén la existente (para no borrarla si no se carga una nueva)
+                if (evento.getImagen() == null && existingEvento.getImagen() != null) {
+                    evento.setImagen(existingEvento.getImagen());
+                }
 
-                // Si la discoteca no se envía en el body de actualización, mantener la existente
+                evento.setAdministrador(existingEvento.getAdministrador());
+
                 if (evento.getDiscoteca() == null && existingEvento.getDiscoteca() != null) {
                     evento.setDiscoteca(existingEvento.getDiscoteca());
                 }
-                return eventoRepository.save(evento);
+                System.out.println("DEBUG DAO: actualizarEvento - Recibida imagen Base64 para actualizar, longitud: " + (evento.getImagen() != null ? evento.getImagen().length() : "null"));
+                Evento updatedEvento = eventoRepository.save(evento);
+                System.out.println("DEBUG DAO: actualizarEvento - Imagen Base64 actualizada, longitud: " + (updatedEvento.getImagen() != null ? updatedEvento.getImagen().length() : "null"));
+                return updatedEvento;
             }
         }
-        return null; // No encontrado o no autorizado
+        return null;
     }
 
     /**
@@ -134,10 +146,12 @@ public class EventosDao {
         if (eventoOpt.isPresent()) {
             Evento evento = eventoOpt.get();
             if (evento.getAdministrador().getIdAdmin().equals(idAdmin)) {
+                System.out.println("DEBUG DAO: eliminarEvento - Eliminando evento con ID: " + id);
                 eventoRepository.deleteById(id);
                 return true;
             }
         }
-        return false; // No encontrado o no autorizado
+        System.out.println("DEBUG DAO: eliminarEvento - No se pudo eliminar evento con ID: " + id + " (No encontrado o no autorizado)");
+        return false;
     }
 }

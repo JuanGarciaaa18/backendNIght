@@ -4,17 +4,18 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "eventos") // Asegúrate que la tabla en la DB sea 'eventos'
+@Table(name = "eventos")
 public class Evento {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer idEvento; // Cambiado a Integer para consistencia
+    private Integer idEvento;
 
     private String nombreEvento;
     private String descripcion;
     private String fecha;
     private String hora;
     private double precio;
+    private String imagen; // <--- Este campo es clave para la imagen
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "nit_discoteca")
@@ -22,9 +23,9 @@ public class Evento {
     private Discoteca discoteca;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_admin") // Columna de la clave foránea en la tabla 'eventos'
+    @JoinColumn(name = "id_admin")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private Administradores administrador; // Ya existía, se mantiene
+    private Administradores administrador;
 
     // --- Getters y Setters ---
 
@@ -90,5 +91,14 @@ public class Evento {
 
     public void setPrecio(double precio) {
         this.precio = precio;
+    }
+
+    // Nuevo getter y setter para imagen
+    public String getImagen() {
+        return imagen;
+    }
+
+    public void setImagen(String imagen) {
+        this.imagen = imagen;
     }
 }
