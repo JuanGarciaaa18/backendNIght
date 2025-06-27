@@ -1,8 +1,8 @@
 package com.BackNight.backendNIght.ws.rest;
 
 import com.BackNight.backendNIght.ws.dao.EventosDao;
-import com.BackNight.backendNIght.ws.entity.Evento; // Ajusta el paquete de tu entidad Evento si es necesario
-import com.BackNight.backendNIght.ws.util.JwtUtil; // Necesario para los endpoints privados de administrador
+import com.BackNight.backendNIght.ws.entity.Evento;
+import com.BackNight.backendNIght.ws.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -12,19 +12,18 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/servicio")
-@CrossOrigin(origins = "http://localhost:5173") // Permite solicitudes desde tu frontend React
+@CrossOrigin(origins = "http://localhost:5173") // ¡ASEGÚRATE DE QUE ESTO ESTÉ EN TU CLASE EventosService!
 public class EventosService {
 
     @Autowired
     private EventosDao eventosDao;
 
     // Método de ayuda para extraer el ID del usuario (administrador) desde el token JWT
-    // Este método solo es necesario para los endpoints que REQUIERAN AUTORIZACIÓN.
     private Integer getUsuarioIdFromAuthHeader(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String token = authorizationHeader.substring(7);
             try {
-                return JwtUtil.extractIdUsuarioFromToken(token); // Asegúrate de que JwtUtil sea accesible
+                return JwtUtil.extractIdUsuarioFromToken(token);
             } catch (Exception e) {
                 System.err.println("Error al extraer ID de usuario del token: " + e.getMessage());
                 return null;
@@ -34,9 +33,9 @@ public class EventosService {
     }
 
     // --- Endpoint PÚBLICO: Obtener un evento individual por su ID ---
-    // ¡CORRECCIÓN CLAVE AQUÍ: YA NO REQUIERE @RequestHeader("Authorization")!
+    // ¡ESTE ES EL MÉTODO QUE DEBES REEMPLAZAR EN TU ARCHIVO EventosService.java!
     @GetMapping("/evento/{id}")
-    public ResponseEntity<Evento> getEventoPublico(@PathVariable Integer id) { // Renombrado para mayor claridad, pero puedes mantener 'getEvento'
+    public ResponseEntity<Evento> getEventoPublico(@PathVariable Integer id) {
         try {
             System.out.println("Backend: Recibida solicitud PÚBLICA para evento con ID: " + id);
             Evento evento = eventosDao.consultarEventoIndividual(id);
@@ -102,7 +101,6 @@ public class EventosService {
     }
 
     // --- Endpoint PRIVADO (ADMIN): Obtener eventos por ADMIN logueado ---
-    // Este SÍ requiere Authorization header
     @GetMapping("/admin/eventos")
     public ResponseEntity<List<Evento>> obtenerEventosPorAdmin(@RequestHeader("Authorization") String authorizationHeader) {
         try {
@@ -122,7 +120,6 @@ public class EventosService {
     }
 
     // Otros endpoints de gestión (POST, PUT, DELETE) para administradores...
-    // Estos SÍ requieren Authorization header
     @PostMapping("/guardar-evento")
     public ResponseEntity<Evento> registrarEvento(@RequestBody Evento evento, @RequestHeader("Authorization") String authorizationHeader) {
         try {
@@ -171,4 +168,4 @@ public class EventosService {
         System.out.println("Backend: Evento " + id + " eliminado por admin " + adminId + " (200 OK).");
         return ResponseEntity.ok().build();
     }
-}
+}   
