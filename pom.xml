@@ -34,12 +34,10 @@
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>com.mercadopago</groupId>
 			<artifactId>sdk-java</artifactId>
-			<version>2.1.29</version>
-		</dependency>
+			<version>2.1.20</version> </dependency>
 		<dependency>
 			<groupId>jakarta.persistence</groupId>
 			<artifactId>jakarta.persistence-api</artifactId>
@@ -65,6 +63,11 @@
 			<artifactId>jjwt-jackson</artifactId> <!-- O jjwt-gson si prefieres Gson -->
 			<version>0.11.5</version> <!-- Misma versión que jjwt-api -->
 		</dependency>
+
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.14.0</version> </dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>

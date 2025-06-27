@@ -5,15 +5,20 @@ import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
 import com.mercadopago.client.preference.PreferenceClient;
 import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.client.preference.PreferenceRequest;
-import com.mercadopago.client.preference.PreferenceRequestAutoReturn; // <<-- ¡Esta es la importación clave!
+// ¡¡¡IMPORTANTE!!! Si usas versiones muy nuevas del SDK de MP,
+// PreferenceRequestAutoReturn puede no existir o no ser necesaria.
+// La hemos eliminado en este código, basándonos en los errores previos.
+// import com.mercadopago.client.preference.PreferenceRequestAutoReturn;
+
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.preference.Preference;
 import com.BackNight.backendNIght.ws.mercadopago.dto.MercadoPagoCreatePreferenceRequest;
-// import com.BackNight.backendNIght.ws.mercadopago.dto.MercadoPagoItemRequest; // No es necesaria aquí
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger; // Importar el logger
+import org.slf4j.LoggerFactory; // Importar el LoggerFactory
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -22,11 +27,14 @@ import java.util.stream.Collectors;
 @Service
 public class MercadoPagoService {
 
+    // Añadir un logger para depuración
+    private static final Logger log = LoggerFactory.getLogger(MercadoPagoService.class);
+
     @Value("${mercadopago.access.token}")
     private String mercadoPagoAccessToken;
 
     @Value("${app.frontend.url}")
-    private String frontendBaseUrl; // e.g., http://localhost:3000
+    private String frontendBaseUrl; // e.g., http://localhost:3000 o https://tudominio.com
 
     public MercadoPagoService(@Value("${mercadopago.access.token}") String accessToken) {
         // Inicializa el SDK de Mercado Pago una sola vez
@@ -34,9 +42,10 @@ public class MercadoPagoService {
     }
 
     public String createPaymentPreference(MercadoPagoCreatePreferenceRequest orderRequest) throws MPException, MPApiException {
-        System.out.println("DEBUG MercadoPagoService: frontendBaseUrl cargado como: '" + frontendBaseUrl + "'");
+        // Usamos el logger en lugar de System.out.println para una mejor gestión en producción
+        log.debug("frontendBaseUrl cargado como: '{}'", frontendBaseUrl);
 
-        // Validación básica (puedes agregar más validaciones aquí)
+        // Validación básica
         if (orderRequest.getItems() == null || orderRequest.getItems().isEmpty()) {
             throw new IllegalArgumentException("El carrito no puede estar vacío.");
         }
@@ -54,22 +63,34 @@ public class MercadoPagoService {
         ).collect(Collectors.toList());
 
         // Define las URLs de retorno para Mercado Pago
+        // ¡ES CRÍTICO QUE frontendBaseUrl TENGA UN VALOR VÁLIDO Y ACCESIBLE!
+        // Ejemplo: "http://localhost:3000" para desarrollo, o "https://tudominio.com" para producción
+        String successUrl = frontendBaseUrl.trim() + "/pago-exitoso";
+        String pendingUrl = frontendBaseUrl.trim() + "/pago-pendiente";
+        String failureUrl = frontendBaseUrl.trim() + "/pago-fallido";
+
+        log.debug("URL de éxito para Mercado Pago: '{}'", successUrl);
+        log.debug("URL de pendiente para Mercado Pago: '{}'", pendingUrl);
+        log.debug("URL de fallo para Mercado Pago: '{}'", failureUrl);
+
         PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                .success(frontendBaseUrl.trim() + "/pago-exitoso") // Crea estas rutas en tu frontend
-                .pending(frontendBaseUrl.trim() + "/pago-pendiente")
-                .failure(frontendBaseUrl.trim() + "/pago-fallido")
+                .success(successUrl)
+                .pending(pendingUrl)
+                .failure(failureUrl)
                 .build();
 
         PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                 .items(itemsMp)
                 .backUrls(backUrls)
-                .autoReturn(PreferenceRequestAutoReturn.NONE) // <<-- ¡Este es el cambio principal!
-                // Puedes añadir más configuraciones aquí, como la información del pagador, etc.
+                // ¡¡¡IMPORTANTE!!! Se elimina la línea .autoReturn(...)
+                // El error indicaba que "back_url.success must be defined" a pesar de autoReturn.
+                // Esto sugiere que autoReturn está entrando en conflicto o es redundante
+                // cuando backUrls ya está completamente definido.
                 .build();
 
         PreferenceClient client = new PreferenceClient();
         Preference preference = client.create(preferenceRequest);
 
-        return preference.getInitPoint(); // Retorna la URL de checkout
+        return preference.getInitPoint(); // Retorna la URL de checkout de Mercado Pago
     }
 }
