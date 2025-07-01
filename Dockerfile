@@ -4,8 +4,8 @@
 # -----------------------------------------------------------
 
 # Usamos una imagen base de OpenJDK 21 JDK.
+# openjdk:21-jdk SÍ debería estar disponible para la fase de build.
 FROM openjdk:21-jdk AS build
-# CAMBIO: de 24-jdk a 21-jdk (COMENTARIO MOVIDO A UNA LÍNEA SEPARADA)
 
 # Establecemos el directorio de trabajo dentro del contenedor.
 WORKDIR /app
@@ -13,7 +13,7 @@ WORKDIR /app
 # Copia el archivo pom.xml primero para que Maven pueda descargar dependencias en una capa separada.
 COPY pom.xml .
 
-# Actualizamos los paquetes del sistema y instalamos Maven.
+# Actualizamos los paquetes del sistema e instalamos Maven.
 # Luego ejecutamos 'go-offline' para precargar las dependencias.
 RUN apt-get update && apt-get install -y maven && \
     mvn dependency:go-offline
@@ -29,9 +29,9 @@ RUN mvn clean install -DskipTests
 # En esta fase, creamos una imagen más ligera solo con lo necesario para ejecutar el JAR.
 # -----------------------------------------------------------
 
-# Usamos la imagen JRE 21 'slim-buster' que SÍ está disponible.
-FROM openjdk:21-jre-slim-buster
-# CAMBIO CLAVE AQUÍ: de 24-jre a 21-jre-slim-buster (COMENTARIO MOVIDO)
+# CAMBIO CLAVE AQUÍ: Usamos eclipse-temurin:21-jre-alpine.
+# Esta es una imagen muy común, ligera y estable.
+FROM eclipse-temurin:21-jre-alpine
 
 # Establece el directorio de trabajo dentro del contenedor.
 WORKDIR /app
@@ -45,6 +45,5 @@ COPY --from=build /app/target/*.jar app.jar
 # Define el comando para ejecutar la aplicación.
 ENTRYPOINT ["java", "-Dserver.port=8080", "-jar", "app.jar"]
 
-# Si tu aplicación usaba características preview de Java 24 y ahora usas Java 21,
-# verifica si aún necesitas --enable-preview (es menos común para J21 que para J24/J23).
+# Si es necesario mantener --enable-preview:
 # ENTRYPOINT ["java", "--enable-preview", "-Dserver.port=8080", "-jar", "app.jar"]
