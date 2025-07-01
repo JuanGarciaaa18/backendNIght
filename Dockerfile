@@ -3,8 +3,8 @@
 # En esta fase, compilamos y empaquetamos nuestra aplicación Spring Boot.
 # -----------------------------------------------------------
 
-# Usamos una imagen base de OpenJDK 24 JDK.
-FROM openjdk:24-jdk AS build
+# Usamos una imagen base de OpenJDK 21 JDK.
+FROM openjdk:21-jdk AS build # CAMBIO: de 24-jdk a 21-jdk
 
 # Establecemos el directorio de trabajo dentro del contenedor.
 WORKDIR /app
@@ -28,9 +28,8 @@ RUN mvn clean install -DskipTests
 # En esta fase, creamos una imagen más ligera solo con lo necesario para ejecutar el JAR.
 # -----------------------------------------------------------
 
-# CAMBIO CLAVE AQUÍ: Usamos la imagen JRE estándar de OpenJDK 24.
-# Es más probable que esta imagen esté disponible en Docker Hub.
-FROM openjdk:24-jre
+# CAMBIO CLAVE AQUÍ: Usamos la imagen JRE 21 'slim-buster' que SÍ está disponible.
+FROM openjdk:21-jre-slim-buster # CAMBIO: de 24-jre a 21-jre-slim-buster
 
 # Establece el directorio de trabajo dentro del contenedor.
 WORKDIR /app
@@ -42,8 +41,9 @@ EXPOSE 8080
 COPY --from=build /app/target/*.jar app.jar
 
 # Define el comando para ejecutar la aplicación.
+# Si tu aplicación usaba características preview de Java 24 y ahora usas Java 21,
+# verifica si aún necesitas --enable-preview (es menos común para J21 que para J24/J23).
 ENTRYPOINT ["java", "-Dserver.port=8080", "-jar", "app.jar"]
 
-# Si tu aplicación usa características preview de Java 24 en TIEMPO DE EJECUCIÓN,
-# DEBES añadir '--enable-preview' aquí. Por ejemplo:
+# Si es necesario mantener --enable-preview (menos común en J21 a menos que uses características muy específicas):
 # ENTRYPOINT ["java", "--enable-preview", "-Dserver.port=8080", "-jar", "app.jar"]
