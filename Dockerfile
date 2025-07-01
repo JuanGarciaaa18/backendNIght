@@ -3,20 +3,19 @@
 # En esta fase, compilamos y empaquetamos nuestra aplicación Spring Boot.
 # -----------------------------------------------------------
 
-# Usamos una imagen base de OpenJDK 21 JDK.
-# openjdk:21-jdk SÍ debería estar disponible para la fase de build.
-FROM openjdk:21-jdk AS build
+# Usamos la imagen oficial de Maven con un JDK de Temurin 21.
+# Esta imagen ya tiene Maven preinstalado y es robusta.
+FROM maven:3.9.5-eclipse-temurin-21 AS build
 
 # Establecemos el directorio de trabajo dentro del contenedor.
 WORKDIR /app
 
 # Copia el archivo pom.xml primero para que Maven pueda descargar dependencias en una capa separada.
+# Esto es una optimización para el cache de Docker.
 COPY pom.xml .
 
-# Actualizamos los paquetes del sistema e instalamos Maven.
-# Luego ejecutamos 'go-offline' para precargar las dependencias.
-RUN apt-get update && apt-get install -y maven && \
-    mvn dependency:go-offline
+# Descarga las dependencias del proyecto. Maven ya está disponible.
+RUN mvn dependency:go-offline
 
 # Copia todo el código fuente del proyecto.
 COPY src ./src
@@ -29,8 +28,7 @@ RUN mvn clean install -DskipTests
 # En esta fase, creamos una imagen más ligera solo con lo necesario para ejecutar el JAR.
 # -----------------------------------------------------------
 
-# CAMBIO CLAVE AQUÍ: Usamos eclipse-temurin:21-jre-alpine.
-# Esta es una imagen muy común, ligera y estable.
+# Usamos eclipse-temurin:21-jre-alpine. Esta imagen es ligera y muy estable/disponible.
 FROM eclipse-temurin:21-jre-alpine
 
 # Establece el directorio de trabajo dentro del contenedor.
@@ -45,5 +43,5 @@ COPY --from=build /app/target/*.jar app.jar
 # Define el comando para ejecutar la aplicación.
 ENTRYPOINT ["java", "-Dserver.port=8080", "-jar", "app.jar"]
 
-# Si es necesario mantener --enable-preview:
+# Si es necesario mantener --enable-preview (generalmente no para JRE en runtime a menos que se use directamente):
 # ENTRYPOINT ["java", "--enable-preview", "-Dserver.port=8080", "-jar", "app.jar"]
