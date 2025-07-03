@@ -5,6 +5,7 @@ import com.BackNight.backendNIght.ws.entity.Administradores;
 import com.BackNight.backendNIght.ws.service.EmailService;
 import com.BackNight.backendNIght.ws.util.CodigoVerificacionStore;
 import com.BackNight.backendNIght.ws.util.JwtUtil;
+import com.BackNight.backendNIght.ws.dto.LoginRequestDTO; // <-- Importa el nuevo DTO de login
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -28,11 +29,9 @@ public class AdministradoresService {
         try {
             Administradores nuevoAdmin = administradoresDao.registrarAdministrador(admin);
 
-            // Generar código de verificación
             String codigo = String.format("%06d", new Random().nextInt(999999));
             codigoStore.guardar(nuevoAdmin.getCorreoAdmin(), codigo);
 
-            // Enviar email
             String contenido = "<h2>Bienvenido a Night +</h2><p>Código: <strong>" + codigo + "</strong></p>";
             emailService.enviarEmail(nuevoAdmin.getCorreoAdmin(), "Verificación Administrador", contenido);
 
@@ -59,21 +58,22 @@ public class AdministradoresService {
     }
 
     @PostMapping("/login-administrador")
-    public ResponseEntity<?> loginAdministradores(@RequestBody Administradores administrador) {
-        Administradores encontrado = administradoresDao.loginAdministradores(administrador.getUsuarioAdmin(), administrador.getContrasenaAdmin());
+    public ResponseEntity<?> loginAdministradores(@RequestBody LoginRequestDTO loginRequest) { // <-- CAMBIADO: Usa LoginRequestDTO
+        Administradores encontrado = administradoresDao.loginAdministradores(
+                loginRequest.getUsuario(),    // <-- Obtiene 'usuario' del DTO
+                loginRequest.getContrasena() // <-- Obtiene 'contrasena' del DTO
+        );
         if (encontrado == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas");
         }
 
-        // Generar token JWT incluyendo el idAdmin
         String token = JwtUtil.generateToken(
                 encontrado.getUsuarioAdmin(),
                 encontrado.getCorreoAdmin(),
                 encontrado.getNombreAdmin(),
-                encontrado.getIdAdmin() // <-- AHORA SÍ PASA EL idAdmin
+                encontrado.getIdAdmin()
         );
 
-        // Retornar la respuesta de login con el idAdmin
         return ResponseEntity.ok(new LoginResponse(
                 encontrado.getUsuarioAdmin(),
                 encontrado.getCorreoAdmin(),
@@ -140,7 +140,7 @@ public class AdministradoresService {
         return ResponseEntity.ok("Contraseña actualizada.");
     }
 
-    // Clase para enviar la respuesta del login
+    // Clase para enviar la respuesta del login (esta definición es correcta aquí)
     public static class LoginResponse {
         private String usuario, correo, nombre, token;
         private Integer idAdmin;

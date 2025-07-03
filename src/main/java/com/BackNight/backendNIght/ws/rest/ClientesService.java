@@ -10,6 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import com.BackNight.backendNIght.ws.service.EmailService;
 import com.BackNight.backendNIght.ws.util.CodigoVerificacionStore;
+import com.BackNight.backendNIght.ws.dto.ClienteLoginRequestDTO; // Importa el nuevo DTO de login de cliente
 
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +36,8 @@ public class ClientesService {
     @PostMapping("/registrar-cliente")
     public ResponseEntity<?> registrarCliente(@RequestBody Clientes cliente) {
         try {
+            // Asegúrate de que la contraseña se encode antes de guardarla
+            cliente.setContrasenaCliente(passwordEncoder.encode(cliente.getContrasenaCliente()));
             Clientes nuevoCliente = clientesDao.registrarCliente(cliente);
 
             String codigo = String.format("%06d", new Random().nextInt(999999));
@@ -67,6 +70,7 @@ public class ClientesService {
                     .body("Error al registrar cliente: " + e.getMessage());
         }
     }
+
     @PutMapping("/update")
     public ResponseEntity<?> actualizarCliente(@RequestBody Clientes cliente) {
         try {
@@ -88,10 +92,9 @@ public class ClientesService {
                 cliente.setContrasenaCliente(clienteExistente.getContrasenaCliente());
             }
 
-            // Aquí imprimimos la contraseña que se va a guardar
             System.out.println("Contraseña que se guardará: " + cliente.getContrasenaCliente());
 
-            Clientes actualizado = clientesDao.actualizarCliente(cliente); // ✅ Correcto
+            Clientes actualizado = clientesDao.actualizarCliente(cliente);
 
             return ResponseEntity.ok(actualizado);
         } catch (Exception e) {
@@ -99,7 +102,6 @@ public class ClientesService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar: " + e.getMessage());
         }
     }
-
 
     @PostMapping("/solicitar-recuperacion")
     public ResponseEntity<?> solicitarRecuperacion(@RequestBody Map<String, String> payload) {
@@ -140,7 +142,8 @@ public class ClientesService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado.");
         }
 
-        clientesDao.actualizarContrasena(cliente, nuevaContrasena);
+        // Codificar la nueva contraseña antes de actualizarla
+        clientesDao.actualizarContrasena(cliente, passwordEncoder.encode(nuevaContrasena));
 
         return ResponseEntity.ok("Contraseña actualizada correctamente.");
     }
@@ -167,25 +170,25 @@ public class ClientesService {
         }
     }
 
-
-    @PostMapping("/login-cliente") // Or whatever your client login endpoint is named
-    public ResponseEntity<?> loginClientes(@RequestBody Clientes cliente) {
-        // Assume 'clientesDao.loginClientes' returns a Cliente entity upon successful authentication
-        Clientes encontrado = clientesDao.loginClientes(cliente.getUsuarioCliente(), cliente.getContrasenaCliente());
+    @PostMapping("/login-cliente")
+    public ResponseEntity<?> loginClientes(@RequestBody ClienteLoginRequestDTO loginRequest) { // <-- ¡Cambiado a ClienteLoginRequestDTO!
+        // El DAO ahora debe verificar la contraseña hasheada
+        Clientes encontrado = clientesDao.loginClientes(
+                loginRequest.getUsuarioCliente(),
+                loginRequest.getContrasenaCliente() // La contraseña en texto plano para el DAO
+        );
 
         if (encontrado == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas");
         }
 
-        // --- THIS IS THE CRITICAL LINE TO CORRECT ---
         String token = JwtUtil.generateToken(
-                encontrado.getUsuarioCliente(),  // First String argument
-                encontrado.getCorreo(),         // Second String argument
-                encontrado.getNombre(),         // Third String argument
-                encontrado.getIdCliente()       // <-- Fourth Integer argument (pass the client's ID)
+                encontrado.getUsuarioCliente(),
+                encontrado.getCorreo(),
+                encontrado.getNombre(),
+                encontrado.getIdCliente()
         );
 
-        // ... rest of your login logic, including returning the LoginResponse for clients
         return ResponseEntity.ok(new ClienteLoginResponse(
                 encontrado.getUsuarioCliente(),
                 encontrado.getCorreo(),
@@ -195,8 +198,7 @@ public class ClientesService {
         ));
     }
 
-    // ... And ensure your ClienteLoginResponse class also includes idCliente
-// (example from previous turn for reference):
+    // Clase para enviar la respuesta del login del cliente
     public static class ClienteLoginResponse {
         private String usuario, correo, nombre, token;
         private Integer idCliente;
@@ -216,4 +218,3 @@ public class ClientesService {
         public Integer getIdCliente() { return idCliente; }
     }
 }
-// ...
