@@ -1,6 +1,8 @@
 package com.BackNight.backendNIght.ws.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference; // Importa esta
 import jakarta.persistence.*;
+import java.util.List; // Importa List
 
 @Entity
 @Table(name = "cliente")
@@ -22,7 +24,12 @@ public class Clientes {
     @Column(name = "contrasena_cliente")
     private String contrasenaCliente;
 
-    // Getters y setters
+    // RELACIÓN AÑADIDA: Un cliente puede tener muchas reservas
+    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("cliente-reservas") // AÑADIDO: Lado "padre" de la relación con Reserva
+    private List<Reserva> reservas;
+
+
     public Integer getIdCliente() {
         return idCliente;
     }
@@ -39,20 +46,20 @@ public class Clientes {
         this.nombre = nombre;
     }
 
-    public Integer getEdad() {
-        return edad;
-    }
-
-    public void setEdad(Integer edad) {
-        this.edad = edad;
-    }
-
     public String getTelefono() {
         return telefono;
     }
 
     public void setTelefono(String telefono) {
         this.telefono = telefono;
+    }
+
+    public Integer getEdad() {
+        return edad;
+    }
+
+    public void setEdad(Integer edad) {
+        this.edad = edad;
     }
 
     public String getCorreo() {
@@ -77,5 +84,13 @@ public class Clientes {
 
     public void setContrasenaCliente(String contrasenaCliente) {
         this.contrasenaCliente = contrasenaCliente;
+    }
+
+    public List<Reserva> getReservas() {
+        return reservas;
+    }
+
+    public void setReservas(List<Reserva> reservas) {
+        this.reservas = reservas;
     }
 }

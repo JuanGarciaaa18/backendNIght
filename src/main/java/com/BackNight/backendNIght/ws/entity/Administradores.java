@@ -1,5 +1,6 @@
 package com.BackNight.backendNIght.ws.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore; // ¡Importa esta anotación!
 import jakarta.persistence.*;
 import java.util.List;
 import java.util.ArrayList;
@@ -29,15 +30,16 @@ public class Administradores {
     private String contrasenaAdmin;
 
     // Relación One-to-Many con Discoteca
-    // 'mappedBy' indica el campo en la entidad Discoteca que posee la relación (administrador)
-    // CascadeType.ALL significa que las operaciones (persist, remove, merge) se propagarán
-    // orphanRemoval = true elimina las discotecas si se desvinculan del admin
+    // Si 'Discoteca' no tiene una referencia a 'List<Administrador>' o 'List<Evento>',
+    // entonces este lado no causaría un bucle directo aquí, pero tenlo en cuenta.
     @OneToMany(mappedBy = "administrador", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Discoteca> discotecas = new ArrayList<>();
 
     // Relación One-to-Many con Evento
-    // 'mappedBy' indica el campo en la entidad Evento que posee la relación (administrador)
+    // Este es el PUNTO CRÍTICO para el bucle.
+    // Al serializar Administrador, ignoramos la lista de eventos para evitar el ciclo.
     @OneToMany(mappedBy = "administrador", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore // <----------------------------------- ¡AÑADE ESTA LÍNEA AQUÍ!
     private List<Evento> eventos = new ArrayList<>();
 
     // --- Getters y Setters ---

@@ -4,7 +4,9 @@ import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.BackNight.backendNIght.ws.mercadopago.dto.MercadoPagoCreatePreferenceRequest;
 import com.BackNight.backendNIght.ws.mercadopago.dto.MercadoPagoPreferenceResponse;
+import com.BackNight.backendNIght.ws.mercadopago.dto.MercadoPagoConfirmationRequest;
 import com.BackNight.backendNIght.ws.mercadopago.service.MercadoPagoService;
+import com.BackNight.backendNIght.ws.entity.Reserva; // Importar la entidad Reserva
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +31,7 @@ public class MercadoPagoController {
     @PostMapping("/create-mercadopago-preference")
     public ResponseEntity<?> createPreference(@RequestBody MercadoPagoCreatePreferenceRequest orderRequest) {
         log.info("Recibida solicitud POST en /servicio/create-mercadopago-preference desde el frontend.");
-        log.debug("Cuerpo de la solicitud recibido: {}", orderRequest.toString()); // Log del cuerpo de la solicitud
+        log.debug("Cuerpo de la solicitud recibido: {}", orderRequest.toString());
 
         try {
             String checkoutUrl = mercadoPagoService.createPaymentPreference(orderRequest);
@@ -51,6 +53,26 @@ public class MercadoPagoController {
         } catch (Exception e) {
             log.error("Error inesperado al crear preferencia de Mercado Pago: {}", e.getMessage(), e);
             return new ResponseEntity<>("Error interno del servidor al procesar el pago.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/confirmar-reserva")
+    public ResponseEntity<?> confirmReservation(@RequestBody MercadoPagoConfirmationRequest confirmationRequest) {
+        log.info("Recibida solicitud POST en /servicio/confirmar-reserva para confirmar pago.");
+        log.debug("Cuerpo de la solicitud recibido: {}", confirmationRequest.toString());
+
+        try {
+            Reserva reservaConfirmada = mercadoPagoService.confirmPaymentAndReservation(confirmationRequest);
+            log.info("Reserva con ID {} confirmada exitosamente. Estado: {}", reservaConfirmada.getIdReserva(), reservaConfirmada.getEstadoPago());
+            return new ResponseEntity<>(reservaConfirmada, HttpStatus.OK);
+
+        } catch (IllegalArgumentException e) {
+            log.error("Error de validación al confirmar reserva: {}", e.getMessage());
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+
+        } catch (Exception e) {
+            log.error("Error inesperado al confirmar reserva: {}", e.getMessage(), e);
+            return new ResponseEntity<>("Error interno del servidor al confirmar la reserva.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

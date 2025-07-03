@@ -1,23 +1,29 @@
-package com.BackNight.backendNIght.ws.mercadopago.dto;// ws/mercadopago/dto/MercadoPagoCreatePreferenceRequest.java
+// src/main/java/com/BackNight/backendNIght/ws/mercadopago/dto/MercadoPagoCreatePreferenceRequest.java
+
+package com.BackNight.backendNIght.ws.mercadopago.dto;
+
 import java.util.List;
 
 public class MercadoPagoCreatePreferenceRequest {
-    private List<MercadoPagoItemRequest> items;
-    private Double total; // Aunque el total se recalcule en el backend, es bueno recibirlo para validación
-    private String eventId; // Si necesitas asociar el pago a un evento específico
+    private List<MercadoPagoItem> items;
+    private Double total;
+    private ReservationDetails reservationDetails;
 
-
-    public MercadoPagoCreatePreferenceRequest(List<MercadoPagoItemRequest> items, Double total, String eventId) {
-        this.items = items;
-        this.total = total;
-        this.eventId = eventId;
+    public MercadoPagoCreatePreferenceRequest() {
     }
 
-    public List<MercadoPagoItemRequest> getItems() {
+    public MercadoPagoCreatePreferenceRequest(List<MercadoPagoItem> items, Double total, ReservationDetails reservationDetails) {
+        this.items = items;
+        this.total = total;
+        this.reservationDetails = reservationDetails;
+    }
+
+    // Getters y Setters
+    public List<MercadoPagoItem> getItems() {
         return items;
     }
 
-    public void setItems(List<MercadoPagoItemRequest> items) {
+    public void setItems(List<MercadoPagoItem> items) {
         this.items = items;
     }
 
@@ -29,11 +35,11 @@ public class MercadoPagoCreatePreferenceRequest {
         this.total = total;
     }
 
-    public String getEventId() {
-        return eventId;
+    public ReservationDetails getReservationDetails() {
+        return reservationDetails;
     }
 
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
+    public void setReservationDetails(ReservationDetails reservationDetails) {
+        this.reservationDetails = reservationDetails;
     }
 }

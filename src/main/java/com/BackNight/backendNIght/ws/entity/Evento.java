@@ -1,7 +1,9 @@
 package com.BackNight.backendNIght.ws.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonBackReference; // Puede que necesites esta
+import com.fasterxml.jackson.annotation.JsonManagedReference; // Asegúrate de importar esta
 import jakarta.persistence.*;
+import java.util.List; // Importa List
 
 @Entity
 @Table(name = "eventos")
@@ -15,26 +17,44 @@ public class Evento {
     private String fecha;
     private String hora;
     private double precio;
-    private String imagen; // <--- Este campo es clave para la imagen
+    private String imagen;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    // Relación con Discoteca
+    @ManyToOne(fetch = FetchType.LAZY) // CAMBIO: A LAZY (si Discoteca tiene List<Evento>)
     @JoinColumn(name = "nit_discoteca")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonBackReference("discoteca-eventos") // AÑADIDO: Rompe el ciclo. Nombre debe coincidir en Discoteca
+    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ELIMINAR
     private Discoteca discoteca;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    // Relación con Administradores
+    @ManyToOne(fetch = FetchType.LAZY) // CAMBIO: A LAZY (si Administradores tiene List<Evento>)
     @JoinColumn(name = "id_admin")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonBackReference("administrador-eventos") // AÑADIDO: Rompe el ciclo. Nombre debe coincidir en Administradores
+    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ELIMINAR
     private Administradores administrador;
 
-    // --- Getters y Setters ---
+    // RELACIÓN AÑADIDA: Un evento puede tener muchas reservas
+    @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("evento-reservas") // AÑADIDO: Lado "padre" de la relación con Reserva
+    private List<Reserva> reservas;
 
-    public Administradores getAdministrador() {
-        return administrador;
+    // --- Getters y Setters ---
+    // ... (Mantén tus getters y setters existentes, y añade para 'reservas')
+
+    public Integer getIdEvento() {
+        return idEvento;
     }
 
-    public void setAdministrador(Administradores administrador) {
-        this.administrador = administrador;
+    public void setIdEvento(Integer idEvento) {
+        this.idEvento = idEvento;
+    }
+
+    public String getNombreEvento() {
+        return nombreEvento;
+    }
+
+    public void setNombreEvento(String nombreEvento) {
+        this.nombreEvento = nombreEvento;
     }
 
     public String getDescripcion() {
@@ -43,14 +63,6 @@ public class Evento {
 
     public void setDescripcion(String descripcion) {
         this.descripcion = descripcion;
-    }
-
-    public Discoteca getDiscoteca() {
-        return discoteca;
-    }
-
-    public void setDiscoteca(Discoteca discoteca) {
-        this.discoteca = discoteca;
     }
 
     public String getFecha() {
@@ -69,22 +81,6 @@ public class Evento {
         this.hora = hora;
     }
 
-    public Integer getIdEvento() {
-        return idEvento;
-    }
-
-    public void setIdEvento(Integer idEvento) {
-        this.idEvento = idEvento;
-    }
-
-    public String getNombreEvento() {
-        return nombreEvento;
-    }
-
-    public void setNombreEvento(String nombreEvento) {
-        this.nombreEvento = nombreEvento;
-    }
-
     public double getPrecio() {
         return precio;
     }
@@ -93,12 +89,35 @@ public class Evento {
         this.precio = precio;
     }
 
-    // Nuevo getter y setter para imagen
     public String getImagen() {
         return imagen;
     }
 
     public void setImagen(String imagen) {
         this.imagen = imagen;
+    }
+
+    public Discoteca getDiscoteca() {
+        return discoteca;
+    }
+
+    public void setDiscoteca(Discoteca discoteca) {
+        this.discoteca = discoteca;
+    }
+
+    public Administradores getAdministrador() {
+        return administrador;
+    }
+
+    public void setAdministrador(Administradores administrador) {
+        this.administrador = administrador;
+    }
+
+    public List<Reserva> getReservas() {
+        return reservas;
+    }
+
+    public void setReservas(List<Reserva> reservas) {
+        this.reservas = reservas;
     }
 }

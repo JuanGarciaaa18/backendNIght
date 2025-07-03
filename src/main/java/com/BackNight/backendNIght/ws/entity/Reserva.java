@@ -1,8 +1,8 @@
-// src/main/java/com/BackNight/backendNIght/ws/entity/Reserva.java
 package com.BackNight.backendNIght.ws.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonBackReference; // Importa esta
 import jakarta.persistence.*;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "reservas")
@@ -12,16 +12,25 @@ public class Reserva {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idReserva;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY) // CAMBIO: A LAZY
     @JoinColumn(name = "id_cliente")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonBackReference("cliente-reservas") // AÑADIDO: Rompe el ciclo en la serialización
+    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ELIMINAR: No es necesario con LAZY y @JsonBackReference
     private Clientes cliente;
 
-    private String fechaReserva;
-    private String estado;
-    private String estadoPago; // ¡NUEVO CAMPO!
+    @ManyToOne(fetch = FetchType.LAZY) // CAMBIO: A LAZY
+    @JoinColumn(name = "id_evento", nullable = false)
+    @JsonBackReference("evento-reservas") // AÑADIDO: Rompe el ciclo en la serialización
+    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ELIMINAR
+    private Evento evento;
 
-    // --- Getters y Setters ---
+    private Integer cantidadTickets;
+    private Double montoTotal;
+    private String idTransaccion;
+    private String preferenceId;
+    private LocalDate fechaReserva;
+    private String estado;
+    private String estadoPago;
 
     public Integer getIdReserva() {
         return idReserva;
@@ -39,11 +48,51 @@ public class Reserva {
         this.cliente = cliente;
     }
 
-    public String getFechaReserva() {
+    public Evento getEvento() {
+        return evento;
+    }
+
+    public void setEvento(Evento evento) {
+        this.evento = evento;
+    }
+
+    public Integer getCantidadTickets() {
+        return cantidadTickets;
+    }
+
+    public void setCantidadTickets(Integer cantidadTickets) {
+        this.cantidadTickets = cantidadTickets;
+    }
+
+    public Double getMontoTotal() {
+        return montoTotal;
+    }
+
+    public void setMontoTotal(Double montoTotal) {
+        this.montoTotal = montoTotal;
+    }
+
+    public String getIdTransaccion() {
+        return idTransaccion;
+    }
+
+    public void setIdTransaccion(String idTransaccion) {
+        this.idTransaccion = idTransaccion;
+    }
+
+    public String getPreferenceId() {
+        return preferenceId;
+    }
+
+    public void setPreferenceId(String preferenceId) {
+        this.preferenceId = preferenceId;
+    }
+
+    public LocalDate getFechaReserva() {
         return fechaReserva;
     }
 
-    public void setFechaReserva(String fechaReserva) {
+    public void setFechaReserva(LocalDate fechaReserva) {
         this.fechaReserva = fechaReserva;
     }
 
@@ -55,11 +104,11 @@ public class Reserva {
         this.estado = estado;
     }
 
-    public String getEstadoPago() { // ¡NUEVO GETTER!
+    public String getEstadoPago() {
         return estadoPago;
     }
 
-    public void setEstadoPago(String estadoPago) { // ¡NUEVO SETTER!
+    public void setEstadoPago(String estadoPago) {
         this.estadoPago = estadoPago;
     }
 }

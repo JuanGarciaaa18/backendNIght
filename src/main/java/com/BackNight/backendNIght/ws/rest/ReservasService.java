@@ -1,4 +1,3 @@
-// src/main/java/com/BackNight/backendNIght/ws/rest/ReservasService.java
 package com.BackNight.backendNIght.ws.rest;
 
 import com.BackNight.backendNIght.ws.dao.ReservasDao;
@@ -13,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/servicio")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173") // ¡Asegúrate que este puerto sea el de tu frontend!
 public class ReservasService {
 
     @Autowired
@@ -33,7 +32,8 @@ public class ReservasService {
     }
 
     // --- Endpoint PRIVADO (ADMIN): Obtener TODAS las reservas ---
-    @GetMapping("/admin/reservas")
+    // ¡CORREGIDO AQUÍ! La ruta ahora coincide con tu frontend
+    @GetMapping("/admin/reservas") // <--- CAMBIO IMPORTANTE: Ahora es /admin/reservas
     public ResponseEntity<List<Reserva>> obtenerTodasLasReservas(@RequestHeader("Authorization") String authorizationHeader) {
         Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
         if (adminId == null) {
@@ -90,11 +90,11 @@ public class ReservasService {
     }
 
     // --- NUEVO ENDPOINT PRIVADO (ADMIN): Actualizar el estado de pago de una reserva ---
-    // Puedes enviarlo como un JSON: {"estadoPago": "PAGADO"}
+    // Ahora espera un JSON con la propiedad "estadoPago"
     @PutMapping("/actualizar-estado-pago-reserva/{id}")
     public ResponseEntity<Reserva> actualizarEstadoPagoReserva(
             @PathVariable Integer id,
-            @RequestBody String nuevoEstadoPago, // Espera un string simple (ej. "PAGADO") o un JSON {"estadoPago": "PAGADO"}
+            @RequestBody EstadoPagoRequest request, // <- Usa el DTO interno para el RequestBody
             @RequestHeader("Authorization") String authorizationHeader) {
 
         Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
@@ -102,36 +102,9 @@ public class ReservasService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        // Si envías un JSON como {"estadoPago": "PAGADO"}, necesitarás extraer el valor
-        // o si envías un string plano, puedes usar @RequestBody String.
-        // Para simplificar, asumiremos que se envía un JSON {"estadoPago": "VALOR"}.
-        // Si usas @RequestBody String, el cuerpo debe ser SOLO el string "PAGADO".
-        // Vamos a reajustar para que espere un objeto con la propiedad.
-        // O mejor, un simple request param si es solo un estado.
-
-        // Opción 1: Recibir un JSON con la propiedad
-        // public ResponseEntity<Reserva> actualizarEstadoPagoReserva(
-        // @PathVariable Integer id, @RequestBody EstadoPagoRequest request, ... )
-        // static class EstadoPagoRequest { public String estadoPago; }
-
-        // Opción 2: Recibir el string directamente en el body (más simple para un solo valor)
-        // Pero el frontend tiende a enviar JSONs. Mejor un objeto simple.
-        // Vamos con la opción 1 con un mapa simple.
-
         try {
-            // Asumimos que el frontend envía un JSON como {"estadoPago": "PAGADO"}
-            // Spring puede mapear automáticamente un String a un Map si el JSON es simple.
-            // Para simplificar aún más y evitar la necesidad de una clase DTO,
-            // si solo se envía un STRING en el body (ej: "PAGADO"), se podría usar:
-            // @RequestBody String estadoPagoPayload
-
-            // Sin embargo, si quieres enviar un JSON, lo más robusto es un DTO.
-            // Para esta demostración y facilidad, asumiremos que se envía un String "PAGADO"
-            // O mejor aún, pasarlo como @RequestParam, pero si es un PUT, @RequestBody es más idiomático.
-
-            // Para que el @RequestBody String funcione, el cliente debe enviar el body como
-            // texto plano "PAGADO" (sin {})
-            Reserva updatedReserva = reservasDao.actualizarEstadoPagoReserva(id, nuevoEstadoPago); // nuevoEstadoPago es el string directamente
+            // Se asume que request.getEstadoPago() no será nulo por la validación del JSON
+            Reserva updatedReserva = reservasDao.actualizarEstadoPagoReserva(id, request.getEstadoPago());
             if (updatedReserva == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
@@ -139,6 +112,20 @@ public class ReservasService {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    // Clase DTO interna para el RequestBody de actualizarEstadoPagoReserva
+    // El frontend debe enviar un JSON como {"estadoPago": "Pagado"}
+    static class EstadoPagoRequest {
+        private String estadoPago;
+
+        public String getEstadoPago() {
+            return estadoPago;
+        }
+
+        public void setEstadoPago(String estadoPago) {
+            this.estadoPago = estadoPago;
         }
     }
 
