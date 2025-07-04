@@ -1,11 +1,11 @@
-# -----------------------------------------------------------
+ -----------------------------------------------------------
 # FASE 1: BUILD (CONSTRUCCIÓN DE LA APLICACIÓN)
 # En esta fase, compilamos y empaquetamos nuestra aplicación Spring Boot.
 # -----------------------------------------------------------
 
-# Usamos la imagen oficial de Maven con un JDK de Temurin 24.
-# Esto asegura compatibilidad con tu entorno de desarrollo local.
-FROM maven:3.9.5-eclipse-temurin-24 AS build
+# Usamos la imagen oficial de Maven con un JDK de Temurin 21.
+# Esta es una versión LTS estable y ampliamente disponible.
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 # Establecemos el directorio de trabajo dentro del contenedor.
 WORKDIR /app
@@ -28,8 +28,8 @@ RUN mvn clean install -DskipTests
 # En esta fase, creamos una imagen más ligera solo con lo necesario para ejecutar el JAR.
 # -----------------------------------------------------------
 
-# Usamos eclipse-temurin:24-jre-alpine. Esta imagen es ligera y muy estable/disponible.
-FROM eclipse-temurin:24-jre-alpine
+# Usamos eclipse-temurin:21-jre-alpine. Esta imagen es ligera y muy estable/disponible.
+FROM eclipse-temurin:21-jre-alpine
 
 # Establece el directorio de trabajo dentro del contenedor.
 WORKDIR /app
