@@ -1,4 +1,4 @@
-package com.BackNight.backendNIght;// package com.BackNight.backendNIght; // Asegúrate que el nombre del paquete sea correcto
+package com.BackNight.backendNIght; // Asegúrate de que el paquete sea correcto
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,13 +23,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Deshabilita CSRF para APIs sin sesiones
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Permite CORS a través del bean definido abajo
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // API REST sin sesiones
+                .csrf(csrf -> csrf.disable()) // Deshabilita CSRF para APIs sin sesiones (típico en REST APIs)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // <-- ¡Esta línea es CLAVE para habilitar CORS!
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // API REST sin sesiones de estado
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/servicio/login-cliente").permitAll()
                         .requestMatchers("/servicio/registrar-cliente").permitAll()
-                        .requestMatchers("/servicio/**").permitAll() // Puedes ser más restrictivo después de probar
+                        // Puedes ser más específico aquí si solo algunas rutas requieren permiso:
+                        .requestMatchers("/servicio/create-mercadopago-preference").permitAll() // <-- Asegura que esta ruta esté permitida
+                        .requestMatchers("/servicio/**").permitAll() // Esto permite todas las rutas bajo /servicio
                         .anyRequest().authenticated() // Cualquier otra solicitud requiere autenticación
                 );
         return http.build();
@@ -39,14 +41,14 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // *** CAMBIO CLAVE AQUÍ: Asegúrate de añadir el dominio de tu frontend en Vercel ***
+        // *** Asegúrate de que los ORÍGENES sean EXACTAMENTE los de tus frontends ***
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",          // Para tu desarrollo local
-                "https://nightplus.vercel.app"    // Para tu frontend desplegado en Vercel
+                "http://localhost:5173",          // Para tu entorno de desarrollo local
+                "https://nightplus.vercel.app"    // <-- ¡Este es el dominio crítico de Vercel!
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")); // Incluye OPTIONS
         configuration.setAllowedHeaders(Arrays.asList("*")); // Permite todos los encabezados
-        configuration.setAllowCredentials(true); // *** MUY IMPORTANTE: Permite el envío de credenciales/cookies ***
+        configuration.setAllowCredentials(true); // Necesario si envías cookies, tokens de auth, etc.
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration); // Aplica esta configuración a TODAS las rutas
