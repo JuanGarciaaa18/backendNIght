@@ -2,23 +2,23 @@ package com.BackNight.backendNIght.ws.rest;
 
 import com.BackNight.backendNIght.ws.dao.EventosDao;
 import com.BackNight.backendNIght.ws.entity.Evento;
-import com.BackNight.backendNIght.ws.util.JwtUtil; // Asegúrate de que esta clase exista y funcione correctamente
+import com.BackNight.backendNIght.ws.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional; // Importa esto
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/servicio")
-@CrossOrigin(origins = "https://nightplus.vercel.app") // Ajusta esto si tu frontend está en otra URL
+@CrossOrigin(origins = "https://nightplus.vercel.app")
 public class EventosService {
 
     @Autowired
     private EventosDao eventosDao;
 
-    // Método de ayuda para extraer el ID del usuario (administrador) desde el token JWT
     private Integer getUsuarioIdFromAuthHeader(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String token = authorizationHeader.substring(7);
@@ -34,6 +34,7 @@ public class EventosService {
 
     // --- Endpoint PÚBLICO: Obtener un evento individual por su ID ---
     @GetMapping("/evento/{id}")
+    @Transactional // Añade @Transactional para asegurar que la sesión de Hibernate esté abierta
     public ResponseEntity<Evento> getEventoPublico(@PathVariable Integer id) {
         try {
             System.out.println("Backend: Recibida solicitud PÚBLICA para evento con ID: " + id);
@@ -42,12 +43,17 @@ public class EventosService {
                 System.out.println("Backend: Evento con ID " + id + " no encontrado (404).");
                 return ResponseEntity.notFound().build();
             }
-            // Limpiar referencias para evitar ciclos JSON y exponer solo lo necesario
-            evento.setAdministrador(null);
+
+            // AHORA AÑADE ESTA LÍNEA PARA INICIALIZAR LA DISCOTECA
+            // Esto forzará la carga del proxy de Discoteca si está en LAZY
             if (evento.getDiscoteca() != null) {
+                evento.getDiscoteca().getNit(); // Accede a cualquier propiedad de Discoteca (como getNit())
+                // para forzar su inicialización mientras la transacción está activa.
                 evento.getDiscoteca().setAdministrador(null);
                 evento.getDiscoteca().setZonas(null);
             }
+            evento.setAdministrador(null); // Esto también podría necesitar ser inicializado si lo necesitas en el JSON
+
             System.out.println("Backend: Evento con ID " + id + " encontrado y enviado (200 OK).");
             return ResponseEntity.ok(evento);
         } catch (Exception e) {
@@ -59,15 +65,18 @@ public class EventosService {
 
     // --- Endpoint PÚBLICO: Obtener TODOS los eventos ---
     @GetMapping("/eventos-list")
+    @Transactional // Añade @Transactional
     public ResponseEntity<List<Evento>> obtenerTodosEventosPublica() {
         try {
             List<Evento> eventos = eventosDao.obtenerTodosEventos();
             for (Evento evento : eventos) {
-                evento.setAdministrador(null);
+                // AÑADE ESTO PARA CADA EVENTO EN LA LISTA
                 if (evento.getDiscoteca() != null) {
+                    evento.getDiscoteca().getNit(); // Fuerza la inicialización
                     evento.getDiscoteca().setAdministrador(null);
                     evento.getDiscoteca().setZonas(null);
                 }
+                evento.setAdministrador(null); // Esto también
             }
             System.out.println("Backend: Lista de todos los eventos enviada (200 OK). Cantidad: " + eventos.size());
             return ResponseEntity.ok(eventos);
@@ -80,15 +89,18 @@ public class EventosService {
 
     // --- Endpoint PÚBLICO: Obtener eventos por NIT de discoteca ---
     @GetMapping("/eventos-por-discoteca/{nitDiscoteca}")
+    @Transactional // Añade @Transactional
     public ResponseEntity<List<Evento>> getEventosByDiscotecaNit(@PathVariable Integer nitDiscoteca) {
         try {
             List<Evento> eventos = eventosDao.consultarEventosPorDiscotecaNit(nitDiscoteca);
             for (Evento evento : eventos) {
-                evento.setAdministrador(null);
+                // AÑADE ESTO PARA CADA EVENTO EN LA LISTA
                 if (evento.getDiscoteca() != null) {
+                    evento.getDiscoteca().getNit(); // Fuerza la inicialización
                     evento.getDiscoteca().setAdministrador(null);
                     evento.getDiscoteca().setZonas(null);
                 }
+                evento.setAdministrador(null); // Esto también
             }
             System.out.println("Backend: Eventos para discoteca NIT " + nitDiscoteca + " encontrados y enviados (200 OK). Cantidad: " + eventos.size());
             return ResponseEntity.ok(eventos);
@@ -99,8 +111,13 @@ public class EventosService {
         }
     }
 
-    // --- Endpoint PRIVADO (ADMIN): Obtener eventos por ADMIN logueado ---
+    // Los endpoints de admin no necesitan @Transactional si ya están dentro de un contexto transaccional
+    // o si el DAO maneja las transacciones. Si el DAO no lo hace, también deberías añadir @Transactional.
+
+    // ... (Mantén el resto de tus métodos sin cambios, o añade @Transactional si el DAO no lo provee)
+
     @GetMapping("/admin/eventos")
+    @Transactional // Añade @Transactional si es necesario para asegurar la carga
     public ResponseEntity<List<Evento>> obtenerEventosPorAdmin(@RequestHeader("Authorization") String authorizationHeader) {
         try {
             Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
@@ -109,6 +126,15 @@ public class EventosService {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
             List<Evento> eventos = eventosDao.obtenerListaEventosPorAdmin(adminId);
+            for (Evento evento : eventos) {
+                if (evento.getDiscoteca() != null) {
+                    evento.getDiscoteca().getNit(); // Fuerza la inicialización
+                    // Limpieza adicional si se desea para el admin
+                    // evento.getDiscoteca().setAdministrador(null);
+                    // evento.getDiscoteca().setZonas(null);
+                }
+                // evento.setAdministrador(null); // Podrías querer enviar el admin para el admin
+            }
             System.out.println("Backend: Eventos para admin " + adminId + " enviados (200 OK). Cantidad: " + eventos.size());
             return ResponseEntity.ok(eventos);
         } catch (Exception e) {
@@ -118,16 +144,29 @@ public class EventosService {
         }
     }
 
-    // Otros endpoints de gestión (POST, PUT, DELETE) para administradores...
+    // ... (resto de tus métodos como registrarEvento, actualizarEvento, eliminarEvento)
+    // Para registrar y actualizar, asegúrate de que el objeto Discoteca (y Administrador)
+    // que viene en el @RequestBody sea completo o que lo busques en el DAO.
+
     @PostMapping("/guardar-evento")
+    @Transactional // Asegura que la operación de persistencia esté dentro de una transacción
     public ResponseEntity<Evento> registrarEvento(@RequestBody Evento evento, @RequestHeader("Authorization") String authorizationHeader) {
         try {
             Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
             if (adminId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
-            // Aquí, en el DAO, es crucial que `evento.getDiscoteca()` no sea nulo y tenga un NIT válido
+            // Importante: Si el evento que llega en el request solo tiene el ID/NIT de la discoteca,
+            // el DAO debe buscar y asignar la entidad Discoteca completa antes de guardar.
+            // Si el frontend envía el objeto Discoteca completo, asegúrate de que sea válido.
             Evento nuevo = eventosDao.registrarEvento(evento, adminId);
+
+            // Una vez guardado, para asegurar la serialización si la respuesta incluye la discoteca completa
+            if (nuevo.getDiscoteca() != null) {
+                nuevo.getDiscoteca().getNit(); // Inicializa el proxy si aún no lo está
+                nuevo.getDiscoteca().setAdministrador(null);
+                nuevo.getDiscoteca().setZonas(null);
+            }
             nuevo.setAdministrador(null);
             System.out.println("Backend: Evento " + nuevo.getIdEvento() + " guardado por admin " + adminId + " (201 Created).");
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);
@@ -136,36 +175,5 @@ public class EventosService {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-    }
-
-    @PutMapping("/actualizar-evento")
-    public ResponseEntity<Evento> actualizarEvento(@RequestBody Evento evento, @RequestHeader("Authorization") String authorizationHeader) {
-        Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
-        if (adminId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        Evento actualizado = eventosDao.actualizarEvento(evento, adminId);
-        if (actualizado == null) {
-            System.out.println("Backend: Evento " + evento.getIdEvento() + " no encontrado o no autorizado para actualizar (404).");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-        actualizado.setAdministrador(null);
-        System.out.println("Backend: Evento " + actualizado.getIdEvento() + " actualizado por admin " + adminId + " (200 OK).");
-        return ResponseEntity.ok(actualizado);
-    }
-
-    @DeleteMapping("/eliminar-evento/{id}")
-    public ResponseEntity<Void> eliminarEvento(@PathVariable Integer id, @RequestHeader("Authorization") String authorizationHeader) {
-        Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
-        if (adminId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        boolean eliminada = eventosDao.eliminarEvento(id, adminId);
-        if (!eliminada) {
-            System.out.println("Backend: Evento " + id + " no encontrado o no autorizado para eliminar (404).");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-        System.out.println("Backend: Evento " + id + " eliminado por admin " + adminId + " (200 OK).");
-        return ResponseEntity.ok().build();
     }
 }
