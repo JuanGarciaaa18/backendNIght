@@ -2,7 +2,7 @@ package com.BackNight.backendNIght.ws.rest;
 
 import com.BackNight.backendNIght.ws.dao.EventosDao;
 import com.BackNight.backendNIght.ws.entity.Evento;
-import com.BackNight.backendNIght.ws.util.JwtUtil;
+import com.BackNight.backendNIght.ws.util.JwtUtil; // Asegúrate de que esta clase exista y funcione correctamente
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -12,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/servicio")
-@CrossOrigin(origins = "https://nightplus.vercel.app")
+@CrossOrigin(origins = "https://nightplus.vercel.app") // Ajusta esto si tu frontend está en otra URL
 public class EventosService {
 
     @Autowired
@@ -33,7 +33,6 @@ public class EventosService {
     }
 
     // --- Endpoint PÚBLICO: Obtener un evento individual por su ID ---
-    // ¡ESTE ES EL MÉTODO QUE DEBES REEMPLAZAR EN TU ARCHIVO EventosService.java!
     @GetMapping("/evento/{id}")
     public ResponseEntity<Evento> getEventoPublico(@PathVariable Integer id) {
         try {
@@ -127,6 +126,7 @@ public class EventosService {
             if (adminId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
+            // Aquí, en el DAO, es crucial que `evento.getDiscoteca()` no sea nulo y tenga un NIT válido
             Evento nuevo = eventosDao.registrarEvento(evento, adminId);
             nuevo.setAdministrador(null);
             System.out.println("Backend: Evento " + nuevo.getIdEvento() + " guardado por admin " + adminId + " (201 Created).");
@@ -168,4 +168,4 @@ public class EventosService {
         System.out.println("Backend: Evento " + id + " eliminado por admin " + adminId + " (200 OK).");
         return ResponseEntity.ok().build();
     }
-}   
+}
