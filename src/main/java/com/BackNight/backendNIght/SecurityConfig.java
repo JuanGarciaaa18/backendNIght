@@ -1,4 +1,5 @@
-package com.BackNight.backendNIght;
+package com.BackNight.backendNIght;// package com.BackNight.backendNIght; // Asegúrate que el nombre del paquete sea correcto
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -7,13 +8,13 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.authentication.AuthenticationManager; // Añadir si lo usas
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration; // Añadir si lo usas
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 
-import org.springframework.web.cors.CorsConfiguration; // <-- NUEVOS IMPORTS
-import org.springframework.web.cors.CorsConfigurationSource; // <-- NUEVOS IMPORTS
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource; // <-- NUEVOS IMPORTS
-import java.util.Arrays; // <-- NUEVOS IMPORTS
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.Arrays; // Importa Arrays
 
 @Configuration
 @EnableWebSecurity
@@ -23,27 +24,29 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable()) // Deshabilita CSRF para APIs sin sesiones
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // <-- AÑADE ESTO para CORS global
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Permite CORS a través del bean definido abajo
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // API REST sin sesiones
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/servicio/login-cliente").permitAll()
                         .requestMatchers("/servicio/registrar-cliente").permitAll()
-                        .requestMatchers("/servicio/**").permitAll() // Puedes mantenerlo para pruebas
-                        .anyRequest().authenticated()
+                        .requestMatchers("/servicio/**").permitAll() // Puedes ser más restrictivo después de probar
+                        .anyRequest().authenticated() // Cualquier otra solicitud requiere autenticación
                 );
         return http.build();
     }
 
-    // --- AÑADE ESTE BEAN PARA LA CONFIGURACIÓN GLOBAL DE CORS ---
+    // --- Configuración Global de CORS ---
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Asegúrate de que esta URL sea EXACTAMENTE la de tu frontend.
-        // Si tu frontend corre en http://localhost:5173, esto es correcto.
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD")); // Añade OPTIONS y HEAD
-        configuration.setAllowedHeaders(Arrays.asList("*")); // Permite todos los headers
-        configuration.setAllowCredentials(true); // Muy importante para credenciales (cookies, auth headers)
+        // *** CAMBIO CLAVE AQUÍ: Asegúrate de añadir el dominio de tu frontend en Vercel ***
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5173",          // Para tu desarrollo local
+                "https://nightplus.vercel.app"    // Para tu frontend desplegado en Vercel
+        ));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+        configuration.setAllowedHeaders(Arrays.asList("*")); // Permite todos los encabezados
+        configuration.setAllowCredentials(true); // *** MUY IMPORTANTE: Permite el envío de credenciales/cookies ***
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration); // Aplica esta configuración a TODAS las rutas
