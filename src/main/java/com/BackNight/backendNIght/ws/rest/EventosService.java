@@ -12,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/servicio")
-@CrossOrigin(origins = "http://localhost:5173") // ¡ASEGÚRATE DE QUE ESTO ESTÉ EN TU CLASE EventosService!
+@CrossOrigin(origins = "https://nightplus.vercel.app")
 public class EventosService {
 
     @Autowired

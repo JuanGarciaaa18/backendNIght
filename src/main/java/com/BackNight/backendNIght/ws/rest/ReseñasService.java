@@ -12,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/servicio/reseñas") // Un prefijo claro para los endpoints de reseñas
-@CrossOrigin(origins = "http://localhost:5173") // Asegúrate de que sea tu frontend
+@CrossOrigin(origins = "https://nightplus.vercel.app")
 public class ReseñasService {
 
     @Autowired

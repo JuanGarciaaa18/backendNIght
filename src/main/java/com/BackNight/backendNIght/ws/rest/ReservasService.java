@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/servicio")
-@CrossOrigin(origins = "http://localhost:5173") // ¡Asegúrate que este puerto sea el de tu frontend!
+@CrossOrigin(origins = "https://nightplus.vercel.app")
 public class ReservasService { // Este es tu controlador REST
 
     @Autowired

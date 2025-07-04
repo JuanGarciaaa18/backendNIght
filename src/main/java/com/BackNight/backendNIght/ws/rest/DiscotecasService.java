@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/servicio")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "https://nightplus.vercel.app")
 public class DiscotecasService {
 
     @Autowired
