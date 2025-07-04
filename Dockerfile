@@ -1,4 +1,4 @@
- -----------------------------------------------------------
+# -----------------------------------------------------------
 # FASE 1: BUILD (CONSTRUCCIÓN DE LA APLICACIÓN)
 # En esta fase, compilamos y empaquetamos nuestra aplicación Spring Boot.
 # -----------------------------------------------------------
