@@ -1,8 +1,7 @@
 package com.BackNight.backendNIght.ws.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonBackReference; // ¡Importa esta!
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -26,16 +25,14 @@ public class Zona {
     @Column(name = "pos_y")
     private Integer posY;
 
-
     @ManyToOne
     @JoinColumn(name = "discoteca_id")
-    @JsonIgnoreProperties("zonas") // evita que al serializar discoteca se intente incluir zonas
+    @JsonBackReference("discoteca-zonas") // <--- ¡CAMBIO CRÍTICO AQUÍ!
     private Discoteca discoteca;
 
     @OneToMany(mappedBy = "zona", cascade = CascadeType.ALL)
-    @JsonIgnoreProperties("zona") // evita ciclos con mesas
+    @JsonIgnoreProperties("zona") // Esto está bien para evitar ciclos con Mesa si Mesa ya tiene un ManyToOne a Zona
     private List<Mesa> mesas;
-
 
     // Getters y setters...
 
@@ -117,5 +114,4 @@ public class Zona {
     public void setPosY(Integer posY) {
         this.posY = posY;
     }
-
 }

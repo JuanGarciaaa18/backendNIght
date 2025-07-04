@@ -1,21 +1,19 @@
 package com.BackNight.backendNIght.ws.dao;
 
-import com.BackNight.backendNIght.ws.entity.Clientes; // Usamos 'Cliente' singular para la entidad
 import com.BackNight.backendNIght.ws.entity.Clientes;
-import com.BackNight.backendNIght.ws.repository.ClientesRepository; // Usamos 'ClienteRepository' singular
 import com.BackNight.backendNIght.ws.repository.ClientesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional; // Importar Optional
+import java.util.Optional;
 
 @Service
 public class ClientesDao {
 
     @Autowired
-    private ClientesRepository clienteRepository; // Inyectar ClienteRepository
+    private ClientesRepository clienteRepository;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
@@ -25,6 +23,7 @@ public class ClientesDao {
      * @return El cliente registrado.
      */
     public Clientes registrarCliente(Clientes cliente) {
+        // Correcto: Cifra la contraseña antes de guardarla.
         cliente.setContrasenaCliente(passwordEncoder.encode(cliente.getContrasenaCliente()));
         return clienteRepository.save(cliente);
     }
@@ -35,6 +34,8 @@ public class ClientesDao {
      * @return El cliente encontrado o null si no existe.
      */
     public Clientes obtenerPorCorreo(String correo) {
+        // Considera cambiar el tipo de retorno a Optional<Clientes> en el repositorio
+        // y aquí, para un manejo más robusto de casos donde el cliente no existe.
         return clienteRepository.findByCorreo(correo);
     }
 
@@ -44,6 +45,7 @@ public class ClientesDao {
      * @return El cliente encontrado o null si no existe.
      */
     public Clientes obtenerPorUsuario(String usuarioCliente) {
+        // Igual que en obtenerPorCorreo, considera Optional<Clientes>.
         return clienteRepository.findByUsuarioCliente(usuarioCliente);
     }
 
@@ -56,9 +58,10 @@ public class ClientesDao {
     public Clientes actualizarContrasena(Clientes cliente, String nuevaContrasena) {
         // Asegúrate de que el cliente tiene un ID válido antes de guardar
         if (cliente.getIdCliente() == null || !clienteRepository.existsById(cliente.getIdCliente())) {
+            // Podrías lanzar una excepción personalizada aquí para mejor manejo en el controlador.
             throw new IllegalArgumentException("Cliente inválido para actualizar la contraseña: ID no encontrado.");
         }
-        cliente.setContrasenaCliente(passwordEncoder.encode(nuevaContrasena));
+        cliente.setContrasenaCliente(passwordEncoder.encode(nuevaContrasena)); // Correcto: Cifra la nueva contraseña.
         return clienteRepository.save(cliente);
     }
 
@@ -68,12 +71,14 @@ public class ClientesDao {
      * @param contrasenaCliente Contraseña sin cifrar del cliente.
      * @return El objeto Cliente si las credenciales son correctas, null en caso contrario.
      */
-    public Clientes loginClientes(String usuarioCliente, String contrasenaCliente) { // Nombre consistente con ClientesService
+    public Clientes loginClientes(String usuarioCliente, String contrasenaCliente) {
+        // Aquí obtienes el cliente por usuario (puede ser Optional si modificas el repo).
         Clientes cliente = clienteRepository.findByUsuarioCliente(usuarioCliente);
+        // Verifica si el cliente existe y si la contraseña plana coincide con la cifrada.
         if (cliente != null && passwordEncoder.matches(contrasenaCliente, cliente.getContrasenaCliente())) {
             return cliente;
         }
-        return null;
+        return null; // Si no existe o las credenciales son incorrectas.
     }
 
     /**
@@ -86,17 +91,17 @@ public class ClientesDao {
 
     /**
      * Actualiza un cliente existente.
-     * Nota: Este método espera que la contraseña ya esté cifrada si se modificó,
-     * o que se mantenga la existente si no se proporciona una nueva.
+     * Nota: Este método asume que la contraseña ya ha sido manejada (cifrada si es nueva o se mantuvo la existente)
+     * antes de que el objeto 'cliente' llegue aquí.
      * @param cliente El cliente con los datos a actualizar.
-     * @return El cliente actualizado.
+     * @return El cliente actualizado, o null si no se puede actualizar (cliente no existe o ID nulo).
      */
     public Clientes actualizarCliente(Clientes cliente) {
         // Solo guardamos si el cliente tiene un ID y existe en la base de datos
         if (cliente.getIdCliente() != null && clienteRepository.existsById(cliente.getIdCliente())) {
             return clienteRepository.save(cliente);
         }
-        return null; // No se puede actualizar si el cliente no existe
+        return null; // No se puede actualizar si el cliente no existe o no tiene ID
     }
 
     /**

@@ -10,7 +10,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import com.BackNight.backendNIght.ws.service.EmailService;
 import com.BackNight.backendNIght.ws.util.CodigoVerificacionStore;
-import com.BackNight.backendNIght.ws.dto.ClienteLoginRequestDTO; // Importa el nuevo DTO de login de cliente
+import com.BackNight.backendNIght.ws.dto.ClienteLoginRequestDTO;
+import jakarta.validation.Valid; // Importar para validación de DTOs
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,7 +21,7 @@ import java.util.Random;
 @RestController
 @RequestMapping("/servicio")
 @CrossOrigin(origins = "http://localhost:5173")
-public class ClientesService {
+public class ClientesService { // Considera renombrar a ClientesController
 
     @Autowired
     private ClientesDao clientesDao;
@@ -31,13 +32,19 @@ public class ClientesService {
     @Autowired
     private CodigoVerificacionStore codigoStore;
 
-    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
 
     @PostMapping("/registrar-cliente")
     public ResponseEntity<?> registrarCliente(@RequestBody Clientes cliente) {
         try {
-            // Asegúrate de que la contraseña se encode antes de guardarla
-            cliente.setContrasenaCliente(passwordEncoder.encode(cliente.getContrasenaCliente()));
+            // ¡¡IMPORTANTE: ELIMINA ESTA LÍNEA!!
+            // Tu DAO (clientesDao.registrarCliente) ya cifra la contraseña.
+            // Si la dejas aquí, la contraseña se cifrará dos veces, lo cual es incorrecto.
+            // cliente.setContrasenaCliente(passwordEncoder.encode(cliente.getContrasenaCliente()));
+
+            // El DAO se encarga de cifrar la contraseña antes de guardar.
             Clientes nuevoCliente = clientesDao.registrarCliente(cliente);
 
             String codigo = String.format("%06d", new Random().nextInt(999999));
@@ -65,7 +72,7 @@ public class ClientesService {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); // Usa un logger en lugar de printStackTrace en producción.
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al registrar cliente: " + e.getMessage());
         }
@@ -78,27 +85,37 @@ public class ClientesService {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El correo es obligatorio.");
             }
 
+            // Si el repositorio devuelve Optional<Clientes>, harías:
+            // Optional<Clientes> clienteExistenteOpt = clientesDao.obtenerPorCorreo(cliente.getCorreo());
+            // if (clienteExistenteOpt.isEmpty()) { ... }
+            // Clientes clienteExistente = clienteExistenteOpt.get();
             Clientes clienteExistente = clientesDao.obtenerPorCorreo(cliente.getCorreo());
             if (clienteExistente == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cliente no encontrado.");
             }
 
-            cliente.setUsuarioCliente(clienteExistente.getUsuarioCliente());
+            // Asegurar que el ID y el usuario se mantengan del cliente existente
             cliente.setIdCliente(clienteExistente.getIdCliente());
+            // Solo si no quieres que el cliente actualice su usuario_cliente desde el request:
+            cliente.setUsuarioCliente(clienteExistente.getUsuarioCliente());
+
 
             if (cliente.getContrasenaCliente() != null && !cliente.getContrasenaCliente().isBlank()) {
+                // Correcto: Hashea la nueva contraseña aquí en el servicio antes de pasarla al DAO.
                 cliente.setContrasenaCliente(passwordEncoder.encode(cliente.getContrasenaCliente()));
             } else {
+                // Si la contraseña no se envía en el request, se mantiene la existente.
                 cliente.setContrasenaCliente(clienteExistente.getContrasenaCliente());
             }
 
-            System.out.println("Contraseña que se guardará: " + cliente.getContrasenaCliente());
+            // Comenta o elimina esta línea en producción:
+            System.out.println("Contraseña que se guardará (hasheada): " + cliente.getContrasenaCliente());
 
             Clientes actualizado = clientesDao.actualizarCliente(cliente);
 
             return ResponseEntity.ok(actualizado);
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); // Usar logger.
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar: " + e.getMessage());
         }
     }
@@ -107,11 +124,8 @@ public class ClientesService {
     public ResponseEntity<?> solicitarRecuperacion(@RequestBody Map<String, String> payload) {
         String correo = payload.get("correo");
 
-        List<Clientes> clientes = clientesDao.obtenerTodos();
-        Clientes cliente = clientes.stream()
-                .filter(c -> c.getCorreo().equalsIgnoreCase(correo))
-                .findFirst()
-                .orElse(null);
+        // ¡OPTIMIZACIÓN CRÍTICA! Usar directamente el método que busca por correo.
+        Clientes cliente = clientesDao.obtenerPorCorreo(correo);
 
         if (cliente == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Correo no registrado.");
@@ -142,8 +156,9 @@ public class ClientesService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado.");
         }
 
-        // Codificar la nueva contraseña antes de actualizarla
-        clientesDao.actualizarContrasena(cliente, passwordEncoder.encode(nuevaContrasena));
+        // Correcto: El método `actualizarContrasena` del DAO ya se encarga de cifrar
+        // la `nuevaContrasena` (que llega aquí en texto plano).
+        clientesDao.actualizarContrasena(cliente, nuevaContrasena);
 
         return ResponseEntity.ok("Contraseña actualizada correctamente.");
     }
@@ -171,14 +186,16 @@ public class ClientesService {
     }
 
     @PostMapping("/login-cliente")
-    public ResponseEntity<?> loginClientes(@RequestBody ClienteLoginRequestDTO loginRequest) { // <-- ¡Cambiado a ClienteLoginRequestDTO!
-        // El DAO ahora debe verificar la contraseña hasheada
+    public ResponseEntity<?> loginClientes(@Valid @RequestBody ClienteLoginRequestDTO loginRequest) {
+        // La lógica de verificación de contraseña hasheada está en el DAO, lo cual es correcto.
+        // Aquí no necesitas usar passwordEncoder.matches() directamente.
         Clientes encontrado = clientesDao.loginClientes(
                 loginRequest.getUsuarioCliente(),
-                loginRequest.getContrasenaCliente() // La contraseña en texto plano para el DAO
+                loginRequest.getContrasenaCliente() // Esta es la contraseña en texto plano
         );
 
         if (encontrado == null) {
+            // Este mensaje se devuelve si el usuario no existe O si la contraseña es incorrecta
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas");
         }
 
@@ -211,6 +228,7 @@ public class ClientesService {
             this.idCliente = idCliente;
         }
 
+        // Getters para los campos
         public String getUsuario() { return usuario; }
         public String getCorreo() { return correo; }
         public String getNombre() { return nombre; }
