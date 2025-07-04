@@ -1,9 +1,9 @@
 package com.BackNight.backendNIght.ws.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore; // ¡Importa esta anotación!
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "administrador")
@@ -29,21 +29,19 @@ public class Administradores {
     @Column(name = "contrasena_admin")
     private String contrasenaAdmin;
 
-    // Relación One-to-Many con Discoteca
-    // Si 'Discoteca' no tiene una referencia a 'List<Administrador>' o 'List<Evento>',
-    // entonces este lado no causaría un bucle directo aquí, pero tenlo en cuenta.
     @OneToMany(mappedBy = "administrador", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("administrador-discotecas") // Parte "padre" de la relación bidireccional con Discoteca
     private List<Discoteca> discotecas = new ArrayList<>();
 
-    // Relación One-to-Many con Evento
-    // Este es el PUNTO CRÍTICO para el bucle.
-    // Al serializar Administrador, ignoramos la lista de eventos para evitar el ciclo.
     @OneToMany(mappedBy = "administrador", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore // <----------------------------------- ¡AÑADE ESTA LÍNEA AQUÍ!
+    @JsonManagedReference("administrador-eventos") // Parte "padre" de la relación bidireccional con Evento
     private List<Evento> eventos = new ArrayList<>();
 
-    // --- Getters y Setters ---
+    // --- Constructor por defecto (necesario para JPA) ---
+    public Administradores() {
+    }
 
+    // --- Getters y Setters ---
     public Integer getIdAdmin() {
         return idAdmin;
     }

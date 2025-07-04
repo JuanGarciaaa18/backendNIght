@@ -1,52 +1,77 @@
 package com.BackNight.backendNIght.ws.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference; // Puede que necesites esta
-import com.fasterxml.jackson.annotation.JsonManagedReference; // Asegúrate de importar esta
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import java.util.List; // Importa List
+import java.util.List;
 
 @Entity
 @Table(name = "eventos")
 public class Evento {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_evento")
     private Integer idEvento;
 
-    private String nombreEvento;
-    private String descripcion;
-    private String fecha;
-    private String hora;
-    private double precio;
-    private String imagen;
-
-    // Relación con Discoteca
-    @ManyToOne(fetch = FetchType.LAZY) // CAMBIO: A LAZY (si Discoteca tiene List<Evento>)
-    @JoinColumn(name = "nit_discoteca")
-    @JsonBackReference("discoteca-eventos") // AÑADIDO: Rompe el ciclo. Nombre debe coincidir en Discoteca
-    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ELIMINAR
+    @ManyToOne(fetch = FetchType.LAZY) // Mantenemos LAZY
+    @JoinColumn(name = "nit_discoteca", nullable = false) // Columna FK en la tabla 'eventos'
+    @JsonBackReference("discoteca-eventos") // Parte "hija" de la relación bidireccional con Discoteca
     private Discoteca discoteca;
 
-    // Relación con Administradores
-    @ManyToOne(fetch = FetchType.LAZY) // CAMBIO: A LAZY (si Administradores tiene List<Evento>)
-    @JoinColumn(name = "id_admin")
-    @JsonBackReference("administrador-eventos") // AÑADIDO: Rompe el ciclo. Nombre debe coincidir en Administradores
-    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ELIMINAR
+    @ManyToOne(fetch = FetchType.LAZY) // Mantenemos LAZY
+    @JoinColumn(name = "id_admin", nullable = false) // Columna FK en la tabla 'eventos'
+    @JsonBackReference("administrador-eventos") // Parte "hija" de la relación bidireccional con Administradores
     private Administradores administrador;
 
-    // RELACIÓN AÑADIDA: Un evento puede tener muchas reservas
+    @Column(name = "nombre_evento", nullable = false, length = 100)
+    private String nombreEvento;
+
+    @Column(name = "descripcion", length = 500)
+    private String descripcion;
+
+    @Column(name = "fecha", nullable = false, length = 20) // Coincide con VARCHAR(20) en SQL
+    private String fecha;
+
+    @Column(name = "hora", nullable = false, length = 10) // Coincide con VARCHAR(10) en SQL
+    private String hora;
+
+    @Column(name = "precio")
+    private Double precio;
+
+    @Column(name = "imagen", length = 255) // Puede ser LONGTEXT en DB, String aquí lo maneja
+    private String imagen;
+
     @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("evento-reservas") // AÑADIDO: Lado "padre" de la relación con Reserva
+    @JsonManagedReference("evento-reservas") // Parte "padre" de la relación bidireccional con Reserva
     private List<Reserva> reservas;
 
-    // --- Getters y Setters ---
-    // ... (Mantén tus getters y setters existentes, y añade para 'reservas')
+    // --- Constructor por defecto (necesario para JPA) ---
+    public Evento() {
+    }
 
+    // --- Getters y Setters ---
     public Integer getIdEvento() {
         return idEvento;
     }
 
     public void setIdEvento(Integer idEvento) {
         this.idEvento = idEvento;
+    }
+
+    public Discoteca getDiscoteca() {
+        return discoteca;
+    }
+
+    public void setDiscoteca(Discoteca discoteca) {
+        this.discoteca = discoteca;
+    }
+
+    public Administradores getAdministrador() {
+        return administrador;
+    }
+
+    public void setAdministrador(Administradores administrador) {
+        this.administrador = administrador;
     }
 
     public String getNombreEvento() {
@@ -81,11 +106,11 @@ public class Evento {
         this.hora = hora;
     }
 
-    public double getPrecio() {
+    public Double getPrecio() {
         return precio;
     }
 
-    public void setPrecio(double precio) {
+    public void setPrecio(Double precio) {
         this.precio = precio;
     }
 
@@ -97,27 +122,21 @@ public class Evento {
         this.imagen = imagen;
     }
 
-    public Discoteca getDiscoteca() {
-        return discoteca;
-    }
-
-    public void setDiscoteca(Discoteca discoteca) {
-        this.discoteca = discoteca;
-    }
-
-    public Administradores getAdministrador() {
-        return administrador;
-    }
-
-    public void setAdministrador(Administradores administrador) {
-        this.administrador = administrador;
-    }
-
     public List<Reserva> getReservas() {
         return reservas;
     }
 
     public void setReservas(List<Reserva> reservas) {
         this.reservas = reservas;
+    }
+
+    @Override
+    public String toString() {
+        return "Evento{" +
+                "idEvento=" + idEvento +
+                ", nombreEvento='" + nombreEvento + '\'' +
+                ", discotecaNit=" + (discoteca != null ? discoteca.getNit() : "null") +
+                ", administradorId=" + (administrador != null ? administrador.getIdAdmin() : "null") +
+                '}';
     }
 }
