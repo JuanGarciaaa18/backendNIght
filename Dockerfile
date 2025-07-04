@@ -21,7 +21,8 @@ RUN mvn dependency:go-offline
 COPY src ./src
 
 # Empaqueta la aplicación Spring Boot en un JAR ejecutable.
-RUN mvn clean install -DskipTests
+# Añadimos -X para depuración completa y -e para errores más detallados.
+RUN mvn clean install -DskipTests -X -e
 
 # -----------------------------------------------------------
 # FASE 2: RUN (EJECUCIÓN DE LA APLICACIÓN)
