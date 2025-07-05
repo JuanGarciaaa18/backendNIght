@@ -28,6 +28,18 @@ public class EventosDao {
         Evento evento = eventoRepository.findById(id).orElse(null);
         if (evento != null) {
             System.out.println("DEBUG DAO: consultarEventoIndividual - Evento ID: " + evento.getIdEvento() + ", Imagen Longitud: " + (evento.getImagen() != null ? evento.getImagen().length() : "null"));
+            // --- INICIO CAMBIO AQUÍ ---
+            if (evento.getDiscoteca() != null) {
+                // Acceder al NIT para forzar la carga de la discoteca
+                Integer discotecaNit = evento.getDiscoteca().getNit();
+                System.out.println("DEBUG DAO: consultarEventoIndividual - NIT de Discoteca accedido: " + discotecaNit);
+                // Limpiar referencias para evitar ciclos (ya lo haces en el service, pero no está de más aquí)
+                evento.getDiscoteca().setAdministrador(null);
+                evento.getDiscoteca().setZonas(null);
+            } else {
+                System.out.println("DEBUG DAO: consultarEventoIndividual - Evento ID " + evento.getIdEvento() + " tiene referencia a discoteca NULA.");
+            }
+            // --- FIN CAMBIO AQUÍ ---
         }
         return evento;
     }
@@ -43,10 +55,17 @@ public class EventosDao {
         for (Evento e : eventos) {
             System.out.println("DEBUG DAO: obtenerListaEventosPorAdmin - Evento ID: " + e.getIdEvento() + ", Imagen Longitud: " + (e.getImagen() != null ? e.getImagen().length() : "null"));
             e.setAdministrador(null);
+            // --- INICIO CAMBIO AQUÍ ---
             if (e.getDiscoteca() != null) {
+                // Acceder al NIT para forzar la carga de la discoteca
+                Integer discotecaNit = e.getDiscoteca().getNit();
+                System.out.println("DEBUG DAO: obtenerListaEventosPorAdmin - NIT de Discoteca accedido: " + discotecaNit);
                 e.getDiscoteca().setAdministrador(null);
                 e.getDiscoteca().setZonas(null);
+            } else {
+                System.out.println("DEBUG DAO: obtenerListaEventosPorAdmin - Evento ID " + e.getIdEvento() + " tiene referencia a discoteca NULA.");
             }
+            // --- FIN CAMBIO AQUÍ ---
         }
         return eventos;
     }
@@ -61,10 +80,17 @@ public class EventosDao {
         for (Evento e : eventos) {
             System.out.println("DEBUG DAO: obtenerTodosEventos - Evento ID: " + e.getIdEvento() + ", Imagen Longitud: " + (e.getImagen() != null ? e.getImagen().length() : "null"));
             e.setAdministrador(null);
+            // --- INICIO CAMBIO AQUÍ ---
             if (e.getDiscoteca() != null) {
+                // Acceder al NIT para forzar la carga de la discoteca
+                Integer discotecaNit = e.getDiscoteca().getNit();
+                System.out.println("DEBUG DAO: obtenerTodosEventos - NIT de Discoteca accedido: " + discotecaNit);
                 e.getDiscoteca().setAdministrador(null);
                 e.getDiscoteca().setZonas(null);
+            } else {
+                System.out.println("DEBUG DAO: obtenerTodosEventos - Evento ID " + e.getIdEvento() + " tiene referencia a discoteca NULA.");
             }
+            // --- FIN CAMBIO AQUÍ ---
         }
         return eventos;
     }
@@ -79,10 +105,17 @@ public class EventosDao {
         for (Evento e : eventos) {
             System.out.println("DEBUG DAO: consultarEventosPorDiscotecaNit - Evento ID: " + e.getIdEvento() + ", Imagen Longitud: " + (e.getImagen() != null ? e.getImagen().length() : "null"));
             e.setAdministrador(null);
+            // --- INICIO CAMBIO AQUÍ ---
             if (e.getDiscoteca() != null) {
+                // Acceder al NIT para forzar la carga de la discoteca
+                Integer discotecaNit = e.getDiscoteca().getNit();
+                System.out.println("DEBUG DAO: consultarEventosPorDiscotecaNit - NIT de Discoteca accedido: " + discotecaNit);
                 e.getDiscoteca().setAdministrador(null);
                 e.getDiscoteca().setZonas(null);
+            } else {
+                System.out.println("DEBUG DAO: consultarEventosPorDiscotecaNit - Evento ID " + e.getIdEvento() + " tiene referencia a discoteca NULA.");
             }
+            // --- FIN CAMBIO AQUÍ ---
         }
         return eventos;
     }
@@ -98,6 +131,14 @@ public class EventosDao {
         Administradores admin = administradoresRepository.findById(idAdmin)
                 .orElseThrow(() -> new RuntimeException("Administrador no encontrado con ID: " + idAdmin));
         evento.setAdministrador(admin);
+
+        // --- INICIO CAMBIO OPCIONAL AQUÍ (para debugging al guardar) ---
+        if (evento.getDiscoteca() != null) {
+            System.out.println("DEBUG DAO: registrarEvento - Recibido NIT Discoteca: " + evento.getDiscoteca().getNit());
+        } else {
+            System.out.println("DEBUG DAO: registrarEvento - Discoteca en evento es NULA al registrar.");
+        }
+        // --- FIN CAMBIO OPCIONAL AQUÍ ---
 
         System.out.println("DEBUG DAO: registrarEvento - Recibida imagen Base64 para guardar, longitud: " + (evento.getImagen() != null ? evento.getImagen().length() : "null"));
         Evento savedEvento = eventoRepository.save(evento);
@@ -121,11 +162,22 @@ public class EventosDao {
                     evento.setImagen(existingEvento.getImagen());
                 }
 
+                // Mantenemos el mismo administrador original para el evento
                 evento.setAdministrador(existingEvento.getAdministrador());
 
+                // --- INICIO CAMBIO OPCIONAL AQUÍ (para asegurar que la discoteca se mantiene si no se envía nueva) ---
+                // Si el evento recibido NO tiene discoteca, pero el existente SÍ, mantenemos la discoteca existente.
                 if (evento.getDiscoteca() == null && existingEvento.getDiscoteca() != null) {
                     evento.setDiscoteca(existingEvento.getDiscoteca());
+                    // Forzamos la carga del NIT también aquí si se mantuvo la discoteca existente
+                    System.out.println("DEBUG DAO: actualizarEvento - Manteniendo Discoteca existente con NIT: " + existingEvento.getDiscoteca().getNit());
+                } else if (evento.getDiscoteca() != null) {
+                    // Si se envió una nueva discoteca (con un NIT), la usamos.
+                    // Accedemos al NIT de la discoteca recién enviada para asegurarnos de que se maneje.
+                    System.out.println("DEBUG DAO: actualizarEvento - Nueva Discoteca recibida con NIT: " + evento.getDiscoteca().getNit());
                 }
+                // --- FIN CAMBIO OPCIONAL AQUÍ ---
+
                 System.out.println("DEBUG DAO: actualizarEvento - Recibida imagen Base64 para actualizar, longitud: " + (evento.getImagen() != null ? evento.getImagen().length() : "null"));
                 Evento updatedEvento = eventoRepository.save(evento);
                 System.out.println("DEBUG DAO: actualizarEvento - Imagen Base64 actualizada, longitud: " + (updatedEvento.getImagen() != null ? updatedEvento.getImagen().length() : "null"));
