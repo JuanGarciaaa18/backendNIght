@@ -1,68 +1,46 @@
-// src/main/java/com/BackNight/backendNIght/ws/dto/ReservaDTO.java
 package com.BackNight.backendNIght.ws.dto;
 
-import java.time.LocalDate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal; // <-- ¡Importante! Asegúrate de que esta línea esté presente
+import java.time.LocalDate; // Para fechaReserva, si lo usas en el DTO
+
+@Data // Genera getters, setters, equals, hashCode, toString
+@Builder // Permite construir objetos de forma fluida
+@NoArgsConstructor // Constructor sin argumentos
+@AllArgsConstructor // Constructor con todos los argumentos
 public class ReservaDTO {
     private Integer idReserva;
     private Integer idEvento;
     private String nombreEvento;
-    private String nombreCliente; // Cambiado de nombreUsuarioCliente para consistencia con la entidad Cliente
+    private String nombreCliente;
     private Integer cantidadTickets;
-    private Double montoTotal; // AÑADIDO
+    private BigDecimal montoTotal; // <-- ¡ESTE ES EL CAMBIO CLAVE! De Double a BigDecimal
     private String idTransaccion;
-    private String preferenceId; // AÑADIDO
-    private LocalDate fechaReserva;
-    private String estado; // AÑADIDO
+    private String preferenceId;
+    private LocalDate fechaReserva; // Considera usar LocalDate si la entidad lo usa
+    private String estado;
     private String estadoPago;
 
-
-    // Constructor completo para mapear desde la entidad Reserva
+    // Si no usas Lombok para @AllArgsConstructor, deberías tener un constructor así:
+    /*
     public ReservaDTO(Integer idReserva, Integer idEvento, String nombreEvento, String nombreCliente,
-                      Integer cantidadTickets, Double montoTotal, String idTransaccion,
-                      String preferenceId, LocalDate fechaReserva, String estado, String estadoPago) { // Constructor ACTUALIZADO
+                      Integer cantidadTickets, BigDecimal montoTotal, String idTransaccion,
+                      String preferenceId, LocalDate fechaReserva, String estado, String estadoPago) {
         this.idReserva = idReserva;
         this.idEvento = idEvento;
         this.nombreEvento = nombreEvento;
         this.nombreCliente = nombreCliente;
         this.cantidadTickets = cantidadTickets;
-        this.montoTotal = montoTotal; // Asignado
+        this.montoTotal = montoTotal; // Asignación de BigDecimal a BigDecimal
         this.idTransaccion = idTransaccion;
-        this.preferenceId = preferenceId; // Asignado
+        this.preferenceId = preferenceId;
         this.fechaReserva = fechaReserva;
-        this.estado = estado; // Asignado
+        this.estado = estado;
         this.estadoPago = estadoPago;
     }
-
-    // Constructor vacío (necesario si vas a deserializar JSON a este DTO)
-    public ReservaDTO() {
-    }
-
-    // --- Getters y Setters (Asegúrate de que los getters y setters para los campos añadidos también existan) ---
-    public Integer getIdReserva() { return idReserva; }
-    public void setIdReserva(Integer idReserva) { this.idReserva = idReserva; }
-    public Integer getIdEvento() { return idEvento; }
-    public void setIdEvento(Integer idEvento) { this.idEvento = idEvento; }
-    public String getNombreEvento() { return nombreEvento; }
-    public void setNombreEvento(String nombreEvento) { this.nombreEvento = nombreEvento; }
-    public String getNombreCliente() { return nombreCliente; } // Getter actualizado
-    public void setNombreCliente(String nombreCliente) { this.nombreCliente = nombreCliente; } // Setter actualizado
-    public Integer getCantidadTickets() { return cantidadTickets; }
-    public void setCantidadTickets(Integer cantidadTickets) { this.cantidadTickets = cantidadTickets; }
-
-    // NUEVOS GETTERS Y SETTERS
-    public Double getMontoTotal() { return montoTotal; }
-    public void setMontoTotal(Double montoTotal) { this.montoTotal = montoTotal; }
-    public String getPreferenceId() { return preferenceId; }
-    public void setPreferenceId(String preferenceId) { this.preferenceId = preferenceId; }
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
-    // FIN NUEVOS GETTERS Y SETTERS
-
-    public LocalDate getFechaReserva() { return fechaReserva; }
-    public void setFechaReserva(LocalDate fechaReserva) { this.fechaReserva = fechaReserva; }
-    public String getEstadoPago() { return estadoPago; }
-    public void setEstadoPago(String estadoPago) { this.estadoPago = estadoPago; }
-    public String getIdTransaccion() { return idTransaccion; }
-    public void setIdTransaccion(String idTransaccion) { this.idTransaccion = idTransaccion; }
+    */
 }

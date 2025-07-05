@@ -4,7 +4,7 @@ import com.mercadopago.MercadoPagoConfig;
 import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
 import com.mercadopago.client.preference.PreferenceClient;
 import com.mercadopago.client.preference.PreferenceItemRequest;
-import com.mercadopago.client.preference.PreferencePaymentMethodsRequest; // Importar si se usa paymentMethods
+import com.mercadopago.client.preference.PreferencePaymentMethodsRequest;
 import com.mercadopago.client.preference.PreferenceRequest;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDate; // Ensure this import is present
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -50,7 +50,6 @@ public class MercadoPagoService {
                               ReservaRepository reservaRepository,
                               EventoRepository eventoRepository,
                               ClientesRepository clienteRepository) {
-        // Inicializa el SDK de Mercado Pago con el token de acceso
         MercadoPagoConfig.setAccessToken(accessToken);
         this.reservaRepository = reservaRepository;
         this.eventoRepository = eventoRepository;
@@ -100,13 +99,17 @@ public class MercadoPagoService {
                 .mapToInt(t -> t.getQuantity())
                 .sum();
         preReserva.setCantidadTickets(totalTickets);
+
+        // This line assumes orderRequest.getReservationDetails().getTotalAmount() is already BigDecimal
         preReserva.setMontoTotal(orderRequest.getReservationDetails().getTotalAmount());
 
+        // --- THE KEY CHANGE IS HERE: Assign LocalDate directly ---
+        // Ensure no 'java.sql.Date.valueOf()' or similar conversion is used here.
         preReserva.setFechaReserva(LocalDate.now()); // Fecha actual de la pre-reserva
-        preReserva.setEstado("Pendiente"); // Estado de la reserva (ej: "Activa", "Pendiente", "Cancelada")
-        preReserva.setEstadoPago("Pendiente"); // Estado inicial del pago
 
-        preReserva.setIdTransaccion(null); // Aún no hay ID de transacción de MP
+        preReserva.setEstado("Pendiente");
+        preReserva.setEstadoPago("Pendiente");
+        preReserva.setIdTransaccion(null);
 
         // Guarda la pre-reserva para obtener un ID
         preReserva = reservaRepository.save(preReserva);
@@ -123,7 +126,7 @@ public class MercadoPagoService {
                     .pictureUrl(item.getPictureUrl())
                     .quantity(item.getQuantity())
                     .currencyId(item.getCurrencyId())
-                    .unitPrice(new BigDecimal(item.getUnitPrice()))
+                    .unitPrice(item.getUnitPrice()) // unitPrice should already be BigDecimal from your DTO
                     .build();
         }).collect(Collectors.toList());
 
@@ -144,15 +147,13 @@ public class MercadoPagoService {
         PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                 .items(itemsMp)
                 .backUrls(backUrls)
-                // .autoReturn("approved") // SE COMENTA/ELIMINA ESTA LÍNEA
-                .externalReference(String.valueOf(preReserva.getIdReserva())) // **CRUCIAL: Usa el ID de tu pre-reserva aquí**
-                .notificationUrl("https://backnight-production.up.railway.app/servicio/mercadopago/webhook") // Asegúrate de que esta URL sea accesible públicamente para notificaciones
-                .statementDescriptor("NightPlus") // Texto que aparecerá en el resumen de la tarjeta del comprador
-                .binaryMode(false) // Si es true, solo se aceptan pagos aprobados, no se permiten pendientes ni rechazados
-                .expires(false) // La preferencia no expira
-                // Opcional: Métodos de pago. Puedes agregar esto si necesitas configurar cuotas, etc.
+                .externalReference(String.valueOf(preReserva.getIdReserva()))
+                .notificationUrl("https://backnight-production.up.railway.app/servicio/mercadopago/webhook")
+                .statementDescriptor("NightPlus")
+                .binaryMode(false)
+                .expires(false)
                 .paymentMethods(PreferencePaymentMethodsRequest.builder()
-                        .installments(1) // Por ejemplo, 1 cuota
+                        .installments(1)
                         .build())
                 .build();
 
@@ -173,7 +174,6 @@ public class MercadoPagoService {
     public Reserva confirmPaymentAndReservation(MercadoPagoConfirmationRequest confirmationRequest) {
         log.info("Confirmación de pago recibida: {}", confirmationRequest);
 
-        // Busca la pre-reserva usando el preferenceId que nos devuelve Mercado Pago
         Optional<Reserva> optionalReserva = reservaRepository.findByPreferenceId(confirmationRequest.getPreferenceId());
 
         if (optionalReserva.isEmpty()) {
@@ -185,21 +185,21 @@ public class MercadoPagoService {
 
         if ("approved".equalsIgnoreCase(confirmationRequest.getStatus())) {
             reserva.setEstadoPago("Pagado");
-            reserva.setEstado("Confirmada"); // Cambia el estado de la reserva a "Confirmada"
-            reserva.setIdTransaccion(confirmationRequest.getCollectionId()); // Guardar el ID de transacción real de MP
+            reserva.setEstado("Confirmada");
+            reserva.setIdTransaccion(confirmationRequest.getCollectionId());
             log.info("Reserva {} (ID MP: {}) actualizada a estado 'Pagado' y 'Confirmada'.", reserva.getIdReserva(), confirmationRequest.getCollectionId());
         } else if ("pending".equalsIgnoreCase(confirmationRequest.getStatus())) {
-            reserva.setEstadoPago("Pendiente"); // Ya debería estar en pendiente, pero lo aseguramos
-            reserva.setEstado("Pendiente"); // Estado de la reserva a "Pendiente"
-            reserva.setIdTransaccion(null); // O limpiar el ID de transacción si ya se había asignado temporalmente
+            reserva.setEstadoPago("Pendiente");
+            reserva.setEstado("Pendiente");
+            reserva.setIdTransaccion(null);
             log.info("Reserva {} (ID MP: {}) actualizada a estado 'Pendiente'.", reserva.getIdReserva(), confirmationRequest.getCollectionId());
-        } else { // "rejected" u otro estado
+        } else {
             reserva.setEstadoPago("Rechazado");
-            reserva.setEstado("Cancelada"); // Estado de la reserva a "Cancelada"
-            reserva.setIdTransaccion(null); // No hay transacción exitosa
+            reserva.setEstado("Cancelada");
+            reserva.setIdTransaccion(null);
             log.warn("Reserva {} (ID MP: {}) actualizada a estado 'Rechazado' y 'Cancelada'.", reserva.getIdReserva(), confirmationRequest.getCollectionId());
         }
 
-        return reservaRepository.save(reserva); // Guarda la reserva actualizada
+        return reservaRepository.save(reserva);
     }
 }
