@@ -1,36 +1,53 @@
 package com.BackNight.backendNIght.ws.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference; // Importa esta
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import java.time.LocalDate;
+import java.sql.Date; // O java.time.LocalDate si prefieres API moderna
 
 @Entity
 @Table(name = "reservas")
 public class Reserva {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idReserva;
 
-    @ManyToOne(fetch = FetchType.LAZY) // CAMBIO: A LAZY
+    @Column(name = "fecha_reserva")
+    private Date fechaReserva; // Considera usar java.time.LocalDate
+
+    private String estado; // RESERVADA, CONFIRMADA, CANCELADA, etc.
+
+    @Column(name = "estado_pago")
+    private String estadoPago; // PENDIENTE, PAGADO, FALLIDO, etc.
+
+    @Column(name = "cantidad_tickets")
+    private Integer cantidadTickets;
+
+    @Column(name = "id_transaccion")
+    private String idTransaccion;
+
+    @Column(name = "monto_total", precision = 10, scale = 2)
+    private Double montoTotal;
+
+    @Column(name = "preference_id")
+    private String preferenceId;
+
+    // Relación Many-to-One con Cliente
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cliente")
-    @JsonBackReference("cliente-reservas") // AÑADIDO: Rompe el ciclo en la serialización
-    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ELIMINAR: No es necesario con LAZY y @JsonBackReference
+    @JsonBackReference("cliente-reservas") // Parte "hija" de la relación bidireccional
     private Clientes cliente;
 
-    @ManyToOne(fetch = FetchType.LAZY) // CAMBIO: A LAZY
-    @JoinColumn(name = "id_evento", nullable = false)
-    @JsonBackReference("evento-reservas") // AÑADIDO: Rompe el ciclo en la serialización
-    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ELIMINAR
+    // Relación Many-to-One con Evento
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_evento") // Columna FK en la tabla 'reservas'
+    @JsonBackReference("evento-reservas") // Parte "hija" de la relación bidireccional
     private Evento evento;
 
-    private Integer cantidadTickets;
-    private Double montoTotal;
-    private String idTransaccion;
-    private String preferenceId;
-    private LocalDate fechaReserva;
-    private String estado;
-    private String estadoPago;
+    // --- Constructor vacío ---
+    public Reserva() {
+    }
+
+    // --- Getters y Setters ---
 
     public Integer getIdReserva() {
         return idReserva;
@@ -40,59 +57,11 @@ public class Reserva {
         this.idReserva = idReserva;
     }
 
-    public Clientes getCliente() {
-        return cliente;
-    }
-
-    public void setCliente(Clientes cliente) {
-        this.cliente = cliente;
-    }
-
-    public Evento getEvento() {
-        return evento;
-    }
-
-    public void setEvento(Evento evento) {
-        this.evento = evento;
-    }
-
-    public Integer getCantidadTickets() {
-        return cantidadTickets;
-    }
-
-    public void setCantidadTickets(Integer cantidadTickets) {
-        this.cantidadTickets = cantidadTickets;
-    }
-
-    public Double getMontoTotal() {
-        return montoTotal;
-    }
-
-    public void setMontoTotal(Double montoTotal) {
-        this.montoTotal = montoTotal;
-    }
-
-    public String getIdTransaccion() {
-        return idTransaccion;
-    }
-
-    public void setIdTransaccion(String idTransaccion) {
-        this.idTransaccion = idTransaccion;
-    }
-
-    public String getPreferenceId() {
-        return preferenceId;
-    }
-
-    public void setPreferenceId(String preferenceId) {
-        this.preferenceId = preferenceId;
-    }
-
-    public LocalDate getFechaReserva() {
+    public Date getFechaReserva() {
         return fechaReserva;
     }
 
-    public void setFechaReserva(LocalDate fechaReserva) {
+    public void setFechaReserva(Date fechaReserva) {
         this.fechaReserva = fechaReserva;
     }
 
@@ -110,5 +79,53 @@ public class Reserva {
 
     public void setEstadoPago(String estadoPago) {
         this.estadoPago = estadoPago;
+    }
+
+    public Integer getCantidadTickets() {
+        return cantidadTickets;
+    }
+
+    public void setCantidadTickets(Integer cantidadTickets) {
+        this.cantidadTickets = cantidadTickets;
+    }
+
+    public String getIdTransaccion() {
+        return idTransaccion;
+    }
+
+    public void setIdTransaccion(String idTransaccion) {
+        this.idTransaccion = idTransaccion;
+    }
+
+    public Double getMontoTotal() {
+        return montoTotal;
+    }
+
+    public void setMontoTotal(Double montoTotal) {
+        this.montoTotal = montoTotal;
+    }
+
+    public String getPreferenceId() {
+        return preferenceId;
+    }
+
+    public void setPreferenceId(String preferenceId) {
+        this.preferenceId = preferenceId;
+    }
+
+    public Clientes getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(Clientes cliente) {
+        this.cliente = cliente;
+    }
+
+    public Evento getEvento() {
+        return evento;
+    }
+
+    public void setEvento(Evento evento) {
+        this.evento = evento;
     }
 }

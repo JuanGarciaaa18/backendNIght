@@ -1,45 +1,57 @@
 package com.BackNight.backendNIght.ws.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference; // Puede que necesites esta
-import com.fasterxml.jackson.annotation.JsonManagedReference; // Asegúrate de importar esta
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import java.util.List; // Importa List
+import java.util.List;
 
 @Entity
-@Table(name = "eventos")
+@Table(name = "eventos") // Asegúrate de que el nombre de la tabla sea 'eventos'
 public class Evento {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idEvento;
 
+    @Column(name = "nombre_evento") // Mapeo explícito para claridad
     private String nombreEvento;
+
+    @Column(name = "descripcion", columnDefinition = "TEXT") // Mapeo explícito a TEXT
     private String descripcion;
+
+    @Column(name = "fecha", length = 20) // Mapeo explícito y longitud
     private String fecha;
+
+    @Column(name = "hora", length = 10) // Mapeo explícito y longitud
     private String hora;
+
+    @Column(name = "precio", precision = 10, scale = 2) // Mapeo explícito para DECIMAL
     private double precio;
+
+    @Column(name = "imagen", columnDefinition = "LONGTEXT") // Mapeo explícito a LONGTEXT
     private String imagen;
 
-    // Relación con Discoteca
-    @ManyToOne(fetch = FetchType.LAZY) // CAMBIO: A LAZY (si Discoteca tiene List<Evento>)
-    @JoinColumn(name = "nit_discoteca")
-    @JsonBackReference("discoteca-eventos") // AÑADIDO: Rompe el ciclo. Nombre debe coincidir en Discoteca
-    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ELIMINAR
+    // Relación Many-to-One con Discoteca
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nit_discoteca") // Columna de clave foránea en la tabla 'eventos'
+    @JsonBackReference("discoteca-eventos") // Parte "hija" de la relación bidireccional
     private Discoteca discoteca;
 
-    // Relación con Administradores
-    @ManyToOne(fetch = FetchType.LAZY) // CAMBIO: A LAZY (si Administradores tiene List<Evento>)
-    @JoinColumn(name = "id_admin")
-    @JsonBackReference("administrador-eventos") // AÑADIDO: Rompe el ciclo. Nombre debe coincidir en Administradores
-    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ELIMINAR
+    // Relación Many-to-One con Administradores
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_admin", nullable = false) // Columna de clave foránea en la tabla 'eventos'. Agregamos nullable=false aquí para que JPA intente hacerla NOT NULL.
+    @JsonBackReference("administrador-eventos") // Parte "hija" de la relación bidireccional
     private Administradores administrador;
 
-    // RELACIÓN AÑADIDA: Un evento puede tener muchas reservas
+    // Relación One-to-Many con Reserva
     @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("evento-reservas") // AÑADIDO: Lado "padre" de la relación con Reserva
+    @JsonManagedReference("evento-reservas") // Parte "padre" de la relación bidireccional
     private List<Reserva> reservas;
 
+    // --- Constructor vacío (necesario para JPA) ---
+    public Evento() {
+    }
+
     // --- Getters y Setters ---
-    // ... (Mantén tus getters y setters existentes, y añade para 'reservas')
 
     public Integer getIdEvento() {
         return idEvento;

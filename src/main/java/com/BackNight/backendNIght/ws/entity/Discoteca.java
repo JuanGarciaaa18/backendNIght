@@ -1,55 +1,51 @@
 package com.BackNight.backendNIght.ws.entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
-@Table(name = "discoteca")
+@Table(name = "discoteca") // Asegúrate de que el nombre de la tabla sea 'discoteca'
 public class Discoteca {
     @Id
-    @Column(name = "nit")
-    // Si tu columna 'nit' en la DB es AUTO_INCREMENT, descomenta la siguiente línea:
-    // @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer nit;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer nit; // NIT como clave primaria
 
-    @Column(name = "nombre")
     private String nombre;
 
-    @Column(name = "restricciones")
+    @Column(columnDefinition = "TEXT")
     private String restricciones;
 
-    @Column(name = "ubicacion")
     private String ubicacion;
-
-    @Column(name = "capacidad")
     private Integer capacidad;
-
-    @Column(name = "horario")
     private String horario;
 
+    @Column(columnDefinition = "LONGTEXT") // Asegúrate de que 'imagen' sea LONGTEXT en DB
+    private String imagen;
+
+    // Relación Many-to-One con Administradores
     @ManyToOne(fetch = FetchType.LAZY) // Mantenemos LAZY
     @JoinColumn(name = "id_admin", nullable = false) // Columna FK en la tabla 'discoteca'
     @JsonBackReference("administrador-discotecas") // Parte "hija" de la relación bidireccional con Administradores
     private Administradores administrador;
 
-    @Column(name = "imagen", columnDefinition = "LONGTEXT") // Mapea a LONGTEXT en DB
-    private String imagen;
-
+    // Relación One-to-Many con Eventos
     @OneToMany(mappedBy = "discoteca", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("discoteca-zonas") // Parte "padre" de la relación bidireccional con Zona
-    private List<Zona> zonas;
-
-    @OneToMany(mappedBy = "discoteca", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("discoteca-eventos") // Parte "padre" de la relación bidireccional con Evento
+    @JsonManagedReference("discoteca-eventos") // Lado "padre" de la relación con Eventos
     private List<Evento> eventos;
 
-    // --- Constructor por defecto (necesario para JPA) ---
+    // Relación One-to-Many con Zonas
+    @OneToMany(mappedBy = "discoteca", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("discoteca-zonas") // Lado "padre" de la relación con Zonas
+    private List<Zona> zonas;
+
+    // --- Constructor vacío ---
     public Discoteca() {
     }
 
     // --- Getters y Setters ---
+
     public Integer getNit() {
         return nit;
     }
@@ -98,14 +94,6 @@ public class Discoteca {
         this.horario = horario;
     }
 
-    public Administradores getAdministrador() {
-        return administrador;
-    }
-
-    public void setAdministrador(Administradores administrador) {
-        this.administrador = administrador;
-    }
-
     public String getImagen() {
         return imagen;
     }
@@ -114,12 +102,12 @@ public class Discoteca {
         this.imagen = imagen;
     }
 
-    public List<Zona> getZonas() {
-        return zonas;
+    public Administradores getAdministrador() {
+        return administrador;
     }
 
-    public void setZonas(List<Zona> zonas) {
-        this.zonas = zonas;
+    public void setAdministrador(Administradores administrador) {
+        this.administrador = administrador;
     }
 
     public List<Evento> getEventos() {
@@ -128,5 +116,13 @@ public class Discoteca {
 
     public void setEventos(List<Evento> eventos) {
         this.eventos = eventos;
+    }
+
+    public List<Zona> getZonas() {
+        return zonas;
+    }
+
+    public void setZonas(List<Zona> zonas) {
+        this.zonas = zonas;
     }
 }
