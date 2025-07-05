@@ -1,4 +1,3 @@
-
 package com.BackNight.backendNIght.ws.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference; // Puede que necesites esta
