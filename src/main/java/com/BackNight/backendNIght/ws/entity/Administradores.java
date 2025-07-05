@@ -2,13 +2,16 @@ package com.BackNight.backendNIght.ws.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "administrador") // Asegúrate de que el nombre de la tabla sea 'administrador'
+@Table(name = "administrador")
 public class Administradores {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_admin")
     private Integer idAdmin;
 
     @Column(name = "nombre_admin")
@@ -21,27 +24,24 @@ public class Administradores {
     private String correoAdmin;
 
     @Column(name = "usuario_admin")
-    private String nombreUsuario; // Cambio a nombreUsuario para más claridad si es el que se usa para login
+    private String usuarioAdmin;
 
     @Column(name = "contrasena_admin")
-    private String contrasena;
+    private String contrasenaAdmin;
 
-    // Relación One-to-Many con Discoteca (un administrador puede tener muchas discotecas)
     @OneToMany(mappedBy = "administrador", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("administrador-discotecas") // Lado "padre" de la relación con Discoteca
-    private List<Discoteca> discotecas;
+    @JsonManagedReference("administrador-discotecas") // Parte "padre" de la relación bidireccional con Discoteca
+    private List<Discoteca> discotecas = new ArrayList<>();
 
-    // Relación One-to-Many con Eventos (un administrador puede crear muchos eventos)
     @OneToMany(mappedBy = "administrador", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("administrador-eventos") // Lado "padre" de la relación con Evento
-    private List<Evento> eventos;
+    @JsonManagedReference("administrador-eventos") // Parte "padre" de la relación bidireccional con Evento
+    private List<Evento> eventos = new ArrayList<>();
 
-    // --- Constructor vacío ---
+    // --- Constructor por defecto (necesario para JPA) ---
     public Administradores() {
     }
 
     // --- Getters y Setters ---
-
     public Integer getIdAdmin() {
         return idAdmin;
     }
@@ -74,20 +74,20 @@ public class Administradores {
         this.correoAdmin = correoAdmin;
     }
 
-    public String getNombreUsuario() {
-        return nombreUsuario;
+    public String getUsuarioAdmin() {
+        return usuarioAdmin;
     }
 
-    public void setNombreUsuario(String nombreUsuario) {
-        this.nombreUsuario = nombreUsuario;
+    public void setUsuarioAdmin(String usuarioAdmin) {
+        this.usuarioAdmin = usuarioAdmin;
     }
 
-    public String getContrasena() {
-        return contrasena;
+    public String getContrasenaAdmin() {
+        return contrasenaAdmin;
     }
 
-    public void setContrasena(String contrasena) {
-        this.contrasena = contrasena;
+    public void setContrasenaAdmin(String contrasenaAdmin) {
+        this.contrasenaAdmin = contrasenaAdmin;
     }
 
     public List<Discoteca> getDiscotecas() {
@@ -105,5 +105,4 @@ public class Administradores {
     public void setEventos(List<Evento> eventos) {
         this.eventos = eventos;
     }
-    // No hay getters/setters para 'paquetes' porque la lista ha sido eliminada
 }
