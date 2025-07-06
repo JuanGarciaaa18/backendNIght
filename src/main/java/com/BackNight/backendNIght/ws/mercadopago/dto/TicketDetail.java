@@ -1,16 +1,16 @@
-// src/main/java/com/BackNight/backendNIght/ws/mercadopago/dto/TicketDetail.java
-
 package com.BackNight.backendNIght.ws.mercadopago.dto;
 
+import java.math.BigDecimal;
+
 public class TicketDetail {
-    private Integer zonaId; // <-- ¡Este campo es crucial y debe estar aquí!
+    private Integer zonaId;
     private Integer quantity;
-    private Double unitPrice;
+    private BigDecimal unitPrice;
 
     public TicketDetail() {
     }
 
-    public TicketDetail(Integer zonaId, Integer quantity, Double unitPrice) {
+    public TicketDetail(Integer zonaId, Integer quantity, BigDecimal unitPrice) {
         this.zonaId = zonaId;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
@@ -33,11 +33,11 @@ public class TicketDetail {
         this.quantity = quantity;
     }
 
-    public Double getUnitPrice() {
+    public BigDecimal getUnitPrice() {
         return unitPrice;
     }
 
-    public void setUnitPrice(Double unitPrice) {
+    public void setUnitPrice(BigDecimal unitPrice) {
         this.unitPrice = unitPrice;
     }
 }

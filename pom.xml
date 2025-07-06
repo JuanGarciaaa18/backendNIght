@@ -6,8 +6,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.4.5</version>
-		<relativePath/> <!-- lookup parent from repository -->
-	</parent>
+		<relativePath/> </parent>
 	<groupId>com.BackNight</groupId>
 	<artifactId>backendNIght</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -26,17 +25,17 @@
 		<tag/>
 		<url/>
 	</scm>
+
 	<properties>
 		<java.version>21</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
+		<lombok.version>1.18.32</lombok.version> </properties>
+
 	<dependencies>
-		<!-- Dependencia de Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.18.32</version> <!-- Versión estable y reciente -->
-			<scope>provided</scope>
+			<version>${lombok.version}</version> <scope>provided</scope>
 		</dependency>
 
 		<dependency>
@@ -110,20 +109,6 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Dependencias para Java 21 y JAXB si las necesitas explícitamente -->
-		<!-- Si ya no tienes errores relacionados con JAXB, puedes ignorar estas -->
-		<!--
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>4.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-            <version>4.0.5</version>
-        </dependency>
-        -->
 	</dependencies>
 
 	<build>
@@ -146,7 +131,19 @@
 				<configuration>
 					<source>21</source>
 					<target>21</target>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version> </path>
+					</annotationProcessorPaths>
 				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.projectlombok</groupId>
+						<artifactId>lombok</artifactId>
+						<version>${lombok.version}</version> </dependency>
+				</dependencies>
 			</plugin>
 		</plugins>
 	</build>

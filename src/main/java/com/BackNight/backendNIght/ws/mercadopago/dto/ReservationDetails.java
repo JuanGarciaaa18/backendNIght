@@ -1,19 +1,18 @@
-// src/main/java/com/BackNight/backendNIght/ws/mercadopago/dto/ReservationDetails.java
-
 package com.BackNight.backendNIght.ws.mercadopago.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class ReservationDetails {
     private Integer eventId;
     private Integer userId;
     private List<TicketDetail> tickets;
-    private Double totalAmount;
+    private BigDecimal totalAmount;
 
     public ReservationDetails() {
     }
 
-    public ReservationDetails(Integer eventId, Integer userId, List<TicketDetail> tickets, Double totalAmount) {
+    public ReservationDetails(Integer eventId, Integer userId, List<TicketDetail> tickets, BigDecimal totalAmount) {
         this.eventId = eventId;
         this.userId = userId;
         this.tickets = tickets;
@@ -45,11 +44,11 @@ public class ReservationDetails {
         this.tickets = tickets;
     }
 
-    public Double getTotalAmount() {
+    public BigDecimal getTotalAmount() {
         return totalAmount;
     }
 
-    public void setTotalAmount(Double totalAmount) {
+    public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
     }
 }

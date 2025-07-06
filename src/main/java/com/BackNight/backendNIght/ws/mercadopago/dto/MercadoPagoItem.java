@@ -1,29 +1,29 @@
-// src/main/java/com/BackNight/backendNIght/ws/mercadopago/dto/MercadoPagoItem.java
-
 package com.BackNight.backendNIght.ws.mercadopago.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty; // ¡Importante para snake_case!
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.math.BigDecimal;
 
 public class MercadoPagoItem {
     private String id;
     private String title;
     private String description;
 
-    @JsonProperty("picture_url") // Mapea 'picture_url' del JSON a 'pictureUrl' en Java
+    @JsonProperty("picture_url")
     private String pictureUrl;
 
     private Integer quantity;
 
-    @JsonProperty("unit_price") // Mapea 'unit_price' del JSON a 'unitPrice' en Java
-    private Double unitPrice;
+    @JsonProperty("unit_price")
+    private BigDecimal unitPrice;
 
-    @JsonProperty("currency_id") // Mapea 'currency_id' del JSON a 'currencyId' en Java
+    @JsonProperty("currency_id")
     private String currencyId;
 
     public MercadoPagoItem() {
     }
 
-    public MercadoPagoItem(String id, String title, String description, String pictureUrl, Integer quantity, Double unitPrice, String currencyId) {
+    public MercadoPagoItem(String id, String title, String description, String pictureUrl, Integer quantity, BigDecimal unitPrice, String currencyId) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -47,8 +47,8 @@ public class MercadoPagoItem {
     public Integer getQuantity() { return quantity; }
     public void setQuantity(Integer quantity) { this.quantity = quantity; }
 
-    public Double getUnitPrice() { return unitPrice; }
-    public void setUnitPrice(Double unitPrice) { this.unitPrice = unitPrice; }
+    public BigDecimal getUnitPrice() { return unitPrice; }
+    public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
 
     public String getCurrencyId() { return currencyId; }
     public void setCurrencyId(String currencyId) { this.currencyId = currencyId; }

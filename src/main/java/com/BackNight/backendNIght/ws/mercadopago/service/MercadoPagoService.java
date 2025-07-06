@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.time.LocalDate; // Ensure this import is present
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -35,9 +35,6 @@ import java.util.stream.Collectors;
 public class MercadoPagoService {
 
     private static final Logger log = LoggerFactory.getLogger(MercadoPagoService.class);
-
-    @Value("${mercadopago.access.token}")
-    private String mercadoPagoAccessToken;
 
     @Value("${app.frontend.url}")
     private String frontendBaseUrl;
@@ -61,6 +58,8 @@ public class MercadoPagoService {
         log.debug("frontendBaseUrl cargado como: '{}'", frontendBaseUrl);
         log.debug("Datos de la solicitud de preferencia recibidos: {}", orderRequest);
 
+        // --- Verificaciones de entrada ---
+        // CLAVE: Aquí es donde se usan getItems() y getReservationDetails()
         if (orderRequest.getItems() == null || orderRequest.getItems().isEmpty()) {
             throw new IllegalArgumentException("El carrito no puede estar vacío.");
         }
@@ -100,11 +99,9 @@ public class MercadoPagoService {
                 .sum();
         preReserva.setCantidadTickets(totalTickets);
 
-        // This line assumes orderRequest.getReservationDetails().getTotalAmount() is already BigDecimal
+        // Ya es BigDecimal en el DTO de entrada, así que directamente:
         preReserva.setMontoTotal(orderRequest.getReservationDetails().getTotalAmount());
 
-        // --- THE KEY CHANGE IS HERE: Assign LocalDate directly ---
-        // Ensure no 'java.sql.Date.valueOf()' or similar conversion is used here.
         preReserva.setFechaReserva(LocalDate.now()); // Fecha actual de la pre-reserva
 
         preReserva.setEstado("Pendiente");
@@ -126,7 +123,7 @@ public class MercadoPagoService {
                     .pictureUrl(item.getPictureUrl())
                     .quantity(item.getQuantity())
                     .currencyId(item.getCurrencyId())
-                    .unitPrice(item.getUnitPrice()) // unitPrice should already be BigDecimal from your DTO
+                    .unitPrice(item.getUnitPrice()) // Ya es BigDecimal desde tu DTO
                     .build();
         }).collect(Collectors.toList());
 

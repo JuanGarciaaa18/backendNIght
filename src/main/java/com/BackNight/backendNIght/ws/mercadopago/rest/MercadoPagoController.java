@@ -6,7 +6,7 @@ import com.BackNight.backendNIght.ws.mercadopago.dto.MercadoPagoCreatePreference
 import com.BackNight.backendNIght.ws.mercadopago.dto.MercadoPagoPreferenceResponse;
 import com.BackNight.backendNIght.ws.mercadopago.dto.MercadoPagoConfirmationRequest;
 import com.BackNight.backendNIght.ws.mercadopago.service.MercadoPagoService;
-import com.BackNight.backendNIght.ws.entity.Reserva; // Importar la entidad Reserva
+import com.BackNight.backendNIght.ws.entity.Reserva;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,10 +14,9 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 @RestController
 @RequestMapping("/servicio")
-@CrossOrigin(origins = "http://localhost:5173") // ¡Asegúrate que este puerto sea el de tu frontend!
+// ¡ELIMINADO! @CrossOrigin(origins = "http://localhost:5173") // <-- QUITA ESTO. La configuración global en SecurityConfig lo maneja.
 public class MercadoPagoController {
 
     private static final Logger log = LoggerFactory.getLogger(MercadoPagoController.class);

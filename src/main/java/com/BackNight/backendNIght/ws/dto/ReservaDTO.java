@@ -1,46 +1,32 @@
 package com.BackNight.backendNIght.ws.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor; // Para el constructor con todos los argumentos
+import lombok.Data; // Para getters, setters, equals, hashCode, toString
+import lombok.NoArgsConstructor; // Para el constructor sin argumentos (importante para Spring y serialización)
 
-import java.math.BigDecimal; // <-- ¡Importante! Asegúrate de que esta línea esté presente
-import java.time.LocalDate; // Para fechaReserva, si lo usas en el DTO
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
-@Data // Genera getters, setters, equals, hashCode, toString
-@Builder // Permite construir objetos de forma fluida
-@NoArgsConstructor // Constructor sin argumentos
-@AllArgsConstructor // Constructor con todos los argumentos
+@Data // Genera getters, setters, toString, equals y hashCode
+@NoArgsConstructor // Genera un constructor sin argumentos
+@AllArgsConstructor // Genera un constructor con TODOS los campos
 public class ReservaDTO {
     private Integer idReserva;
-    private Integer idEvento;
-    private String nombreEvento;
-    private String nombreCliente;
-    private Integer cantidadTickets;
-    private BigDecimal montoTotal; // <-- ¡ESTE ES EL CAMBIO CLAVE! De Double a BigDecimal
-    private String idTransaccion;
-    private String preferenceId;
-    private LocalDate fechaReserva; // Considera usar LocalDate si la entidad lo usa
-    private String estado;
-    private String estadoPago;
+    private Integer idEvento;       // Coincide con el 2do argumento en ReservaService
+    private String nombreEvento;    // Coincide con el 3er argumento
+    private String nombreCliente;   // Coincide con el 4to argumento
+    private Integer cantidadTickets; // Coincide con el 5to argumento
+    private BigDecimal montoTotal;   // Coincide con el 6to argumento
+    private String idTransaccion;   // Coincide con el 7mo argumento
+    private String preferenceId;    // Coincide con el 8vo argumento
+    private LocalDate fechaReserva; // Coincide con el 9no argumento
+    private String estado;          // Coincide con el 10mo argumento
+    private String estadoPago;      // Coincide con el 11vo argumento
 
-    // Si no usas Lombok para @AllArgsConstructor, deberías tener un constructor así:
-    /*
-    public ReservaDTO(Integer idReserva, Integer idEvento, String nombreEvento, String nombreCliente,
-                      Integer cantidadTickets, BigDecimal montoTotal, String idTransaccion,
-                      String preferenceId, LocalDate fechaReserva, String estado, String estadoPago) {
-        this.idReserva = idReserva;
-        this.idEvento = idEvento;
-        this.nombreEvento = nombreEvento;
-        this.nombreCliente = nombreCliente;
-        this.cantidadTickets = cantidadTickets;
-        this.montoTotal = montoTotal; // Asignación de BigDecimal a BigDecimal
-        this.idTransaccion = idTransaccion;
-        this.preferenceId = preferenceId;
-        this.fechaReserva = fechaReserva;
-        this.estado = estado;
-        this.estadoPago = estadoPago;
-    }
-    */
+
+
+
+    // Nota: El orden de los campos aquí es el que determina el orden de los argumentos
+    // para el constructor generado por @AllArgsConstructor.
+    // Debe coincidir con el orden en que los pasas en ReservaService.java.
 }
