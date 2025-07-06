@@ -26,12 +26,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode; // New import
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.HashMap; // Nuevo import
-import java.util.Map;   // Nuevo import
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class MercadoPagoService {
@@ -45,15 +46,11 @@ public class MercadoPagoService {
     private final EventoRepository eventoRepository;
     private final ClientesRepository clienteRepository;
 
-    // Mapa para convertir IDs de zona de string a numérico (si es necesario)
     private static final Map<String, String> ZONA_ID_MAPPING = new HashMap<>();
 
     static {
-        // Aquí defines el mapeo de tus IDs de zona.
-        // Por ejemplo, "general" -> "1", "vip" -> "2", etc.
-        // Ajusta estos valores según los IDs numéricos que tengas para tus zonas.
         ZONA_ID_MAPPING.put("general", "1");
-        // Agrega más mapeos si tienes otras zonas (ej. ZONA_ID_MAPPING.put("vip", "2");)
+        // Add more mappings here if you have other zones (e.g., ZONA_ID_MAPPING.put("vip", "2");)
     }
 
     public MercadoPagoService(@Value("${mercadopago.access.token}") String accessToken,
@@ -68,14 +65,14 @@ public class MercadoPagoService {
 
     @Transactional
     public String createPaymentPreference(MercadoPagoCreatePreferenceRequest orderRequest) throws MPException, MPApiException {
-        log.debug("frontendBaseUrl cargado como: '{}'", frontendBaseUrl);
-        log.debug("Datos de la solicitud de preferencia recibidos: {}", orderRequest);
+        log.debug("frontendBaseUrl loaded as: '{}'", frontendBaseUrl);
+        log.debug("Preference request data received: {}", orderRequest);
 
         if (orderRequest.getItems() == null || orderRequest.getItems().isEmpty()) {
-            throw new IllegalArgumentException("El carrito no puede estar vacío.");
+            throw new IllegalArgumentException("The cart cannot be empty.");
         }
         if (orderRequest.getReservationDetails() == null) {
-            throw new IllegalArgumentException("Los detalles de la reserva no pueden ser nulos.");
+            throw new IllegalArgumentException("Reservation details cannot be null.");
         }
 
         Reserva preReserva = new Reserva();
@@ -83,7 +80,7 @@ public class MercadoPagoService {
         Integer eventId = orderRequest.getReservationDetails().getEventId();
         Optional<Evento> optionalEvento = eventoRepository.findById(eventId);
         if (optionalEvento.isEmpty()) {
-            throw new IllegalArgumentException("Evento no encontrado con ID: " + eventId);
+            throw new IllegalArgumentException("Event not found with ID: " + eventId);
         }
         preReserva.setEvento(optionalEvento.get());
 
@@ -91,13 +88,13 @@ public class MercadoPagoService {
         if (userId != null) {
             Optional<Clientes> optionalCliente = clienteRepository.findById(userId);
             if (optionalCliente.isEmpty()) {
-                log.warn("Cliente no encontrado con ID: {}. La reserva se creará sin cliente asociado.", userId);
+                log.warn("Client not found with ID: {}. Reservation will be created without associated client.", userId);
                 preReserva.setCliente(null);
             } else {
                 preReserva.setCliente(optionalCliente.get());
             }
         } else {
-            log.warn("ID de usuario nulo. La reserva se creará sin cliente asociado.");
+            log.warn("Null user ID. Reservation will be created without associated client.");
             preReserva.setCliente(null);
         }
 
@@ -115,34 +112,39 @@ public class MercadoPagoService {
         preReserva.setIdTransaccion(null);
 
         preReserva = reservaRepository.save(preReserva);
-        log.info("Pre-reserva creada con ID: {}", preReserva.getIdReserva());
+        log.info("Pre-reservation created with ID: {}", preReserva.getIdReserva());
 
         List<PreferenceItemRequest> itemsMp = orderRequest.getItems().stream().map(item -> {
             String itemIdToUse = item.getId();
-            // *** INICIO DEL CAMBIO CLAVE ***
-            // Si el ID del ítem recibido del frontend es una cadena no numérica como "general",
-            // intentamos mapearla a un ID numérico string
             if (ZONA_ID_MAPPING.containsKey(item.getId().toLowerCase())) {
                 itemIdToUse = ZONA_ID_MAPPING.get(item.getId().toLowerCase());
-                log.debug("Mapeando ID de ítem '{}' a ID numérico '{}' para Mercado Pago.", item.getId(), itemIdToUse);
+                log.debug("Mapping item ID '{}' to numeric ID '{}' for Mercado Pago.", item.getId(), itemIdToUse);
             } else {
-                // Si el ID no está en el mapeo, y no es un número, podríamos loggear una advertencia
-                // o manejarlo de otra manera si se esperan solo IDs numéricos.
-                // Aquí, simplemente lo dejamos como está si no hay un mapeo directo.
-                log.warn("El ID de ítem '{}' no es un número ni está en el mapeo de zonas.", item.getId());
+                log.warn("Item ID '{}' is not numeric and not in zone mapping.", item.getId());
             }
-            // *** FIN DEL CAMBIO CLAVE ***
 
-            log.debug("Procesando item: ID={}, Title={}, Quantity={}, UnitPrice={}",
-                    itemIdToUse, item.getTitle(), item.getQuantity(), item.getUnitPrice());
+            // *** START OF KEY CHANGE ***
+            // Ensure unitPrice is not null and has a defined scale and rounding mode
+            BigDecimal finalUnitPrice = item.getUnitPrice();
+            if (finalUnitPrice == null) {
+                log.error("Item unitPrice is null for item ID: {}. Setting to BigDecimal.ZERO.", itemIdToUse);
+                finalUnitPrice = BigDecimal.ZERO; // Default to zero if null to avoid NPE
+            }
+            // Set scale to 2 (for cents/decimal places) and use HALF_EVEN rounding
+            finalUnitPrice = finalUnitPrice.setScale(2, RoundingMode.HALF_EVEN);
+            // *** END OF KEY CHANGE ***
+
+            log.debug("Processing item for MP: ID={}, Title={}, Quantity={}, UnitPrice={}",
+                    itemIdToUse, item.getTitle(), item.getQuantity(), finalUnitPrice); // Log the finalUnitPrice
+
             return PreferenceItemRequest.builder()
-                    .id(itemIdToUse) // Usamos el ID mapeado o el original
+                    .id(itemIdToUse)
                     .title(item.getTitle())
                     .description(item.getDescription())
                     .pictureUrl(item.getPictureUrl())
                     .quantity(item.getQuantity())
                     .currencyId(item.getCurrencyId())
-                    .unitPrice(item.getUnitPrice())
+                    .unitPrice(finalUnitPrice) // Use the potentially adjusted unitPrice
                     .build();
         }).collect(Collectors.toList());
 
@@ -150,9 +152,9 @@ public class MercadoPagoService {
         String pendingUrl = frontendBaseUrl.trim() + "/pago-pendiente";
         String failureUrl = frontendBaseUrl.trim() + "/pago-fallido";
 
-        log.debug("URL de éxito para Mercado Pago: '{}'", successUrl);
-        log.debug("URL de pendiente para Mercado Pago: '{}'", pendingUrl);
-        log.debug("URL de fallo para Mercado Pago: '{}'", failureUrl);
+        log.debug("Success URL for Mercado Pago: '{}'", successUrl);
+        log.debug("Pending URL for Mercado Pago: '{}'", pendingUrl);
+        log.debug("Failure URL for Mercado Pago: '{}'", failureUrl);
 
         PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
                 .success(successUrl)
@@ -176,7 +178,7 @@ public class MercadoPagoService {
         PreferenceClient client = new PreferenceClient();
         Preference preference = client.create(preferenceRequest);
 
-        log.info("Preferencia de pago creada con ID: {} e InitPoint: {}. External Reference: {}",
+        log.info("Payment preference created with ID: {} and InitPoint: {}. External Reference: {}",
                 preference.getId(), preference.getInitPoint(), preference.getExternalReference());
 
         preReserva.setPreferenceId(preference.getId());
@@ -187,13 +189,13 @@ public class MercadoPagoService {
 
     @Transactional
     public Reserva confirmPaymentAndReservation(MercadoPagoConfirmationRequest confirmationRequest) {
-        log.info("Confirmación de pago recibida: {}", confirmationRequest);
+        log.info("Payment confirmation received: {}", confirmationRequest);
 
         Optional<Reserva> optionalReserva = reservaRepository.findByPreferenceId(confirmationRequest.getPreferenceId());
 
         if (optionalReserva.isEmpty()) {
-            log.warn("Reserva pendiente no encontrada para preferenceId: {}. No se puede confirmar.", confirmationRequest.getPreferenceId());
-            throw new IllegalArgumentException("Reserva pendiente no encontrada para la preferencia de pago.");
+            log.warn("Pending reservation not found for preferenceId: {}. Cannot confirm.", confirmationRequest.getPreferenceId());
+            throw new IllegalArgumentException("Pending reservation not found for payment preference.");
         }
 
         Reserva reserva = optionalReserva.get();
@@ -202,17 +204,17 @@ public class MercadoPagoService {
             reserva.setEstadoPago("Pagado");
             reserva.setEstado("Confirmada");
             reserva.setIdTransaccion(confirmationRequest.getCollectionId());
-            log.info("Reserva {} (ID MP: {}) actualizada a estado 'Pagado' y 'Confirmada'.", reserva.getIdReserva(), confirmationRequest.getCollectionId());
+            log.info("Reservation {} (MP ID: {}) updated to 'Paid' and 'Confirmed' status.", reserva.getIdReserva(), confirmationRequest.getCollectionId());
         } else if ("pending".equalsIgnoreCase(confirmationRequest.getStatus())) {
             reserva.setEstadoPago("Pendiente");
             reserva.setEstado("Pendiente");
             reserva.setIdTransaccion(null);
-            log.info("Reserva {} (ID MP: {}) actualizada a estado 'Pendiente'.", reserva.getIdReserva(), confirmationRequest.getCollectionId());
+            log.info("Reservation {} (MP ID: {}) updated to 'Pending' status.", reserva.getIdReserva(), confirmationRequest.getCollectionId());
         } else {
             reserva.setEstadoPago("Rechazado");
             reserva.setEstado("Cancelada");
             reserva.setIdTransaccion(null);
-            log.warn("Reserva {} (ID MP: {}) actualizada a estado 'Rechazado' y 'Cancelada'.", reserva.getIdReserva(), confirmationRequest.getCollectionId());
+            log.warn("Reservation {} (MP ID: {}) updated to 'Rejected' and 'Cancelled' status.", reserva.getIdReserva(), confirmationRequest.getCollectionId());
         }
 
         return reservaRepository.save(reserva);
