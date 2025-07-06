@@ -11,28 +11,34 @@ import java.util.List;
 public class Evento {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_evento") // Asegúrate de tener el @Column para id_evento
     private Integer idEvento;
 
+    @Column(name = "nombre_evento") // Añadir @Column si el nombre de la columna es diferente
     private String nombreEvento;
+    @Column(name = "descripcion", columnDefinition = "TEXT") // Asegurar mapeo correcto
     private String descripcion;
+    @Column(name = "fecha")
     private String fecha;
+    @Column(name = "hora")
     private String hora;
 
     // **CAMBIO IMPORTANTE:** Usar BigDecimal para precios
     @Column(name = "precio")
     private BigDecimal precio;
 
+    @Column(name = "imagen", columnDefinition = "LONGTEXT") // Asegurar mapeo correcto
     private String imagen;
 
     // Relación con Discoteca
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "nit_discoteca") // ¡Asegúrate que esta columna exista y esté correcta en tu DB!
+    @ManyToOne(fetch = FetchType.LAZY) // Mantener LAZY aquí, JOIN FETCH lo cargará
+    @JoinColumn(name = "nit_discoteca", referencedColumnName = "nit", nullable = false) // ¡nullable=false si siempre debe tener discoteca!
     @JsonBackReference("discoteca-eventos")
     private Discoteca discoteca;
 
     // Relación con Administradores
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_admin") // ¡Asegúrate que esta columna exista y esté correcta en tu DB!
+    @JoinColumn(name = "id_admin", referencedColumnName = "id_admin", nullable = false) // ¡nullable=false si siempre debe tener admin!
     @JsonBackReference("administrador-eventos")
     private Administradores administrador;
 
@@ -45,7 +51,7 @@ public class Evento {
     public Evento() {
     }
 
-    // --- Getters y Setters ---
+    // --- Getters y Setters --- (Asegúrate de que todos estén, especialmente para las relaciones)
     public Integer getIdEvento() {
         return idEvento;
     }

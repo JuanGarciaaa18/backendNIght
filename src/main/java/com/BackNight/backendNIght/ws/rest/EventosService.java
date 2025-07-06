@@ -52,6 +52,7 @@ public class EventosService {
             if (evento.getDiscoteca() != null) {
                 evento.getDiscoteca().setAdministrador(null);
                 evento.getDiscoteca().setZonas(null);
+                evento.getDiscoteca().setEventos(null); // ¡Añadido: Limpiar la lista de eventos de la discoteca!
             }
             System.out.println("Backend: Evento con ID " + id + " encontrado y enviado (200 OK).");
             return ResponseEntity.ok(evento);
@@ -72,6 +73,7 @@ public class EventosService {
                 if (evento.getDiscoteca() != null) {
                     evento.getDiscoteca().setAdministrador(null);
                     evento.getDiscoteca().setZonas(null);
+                    evento.getDiscoteca().setEventos(null); // ¡Añadido: Limpiar la lista de eventos de la discoteca!
                 }
             }
             System.out.println("Backend: Lista de todos los eventos enviada (200 OK). Cantidad: " + eventos.size());
@@ -93,6 +95,7 @@ public class EventosService {
                 if (evento.getDiscoteca() != null) {
                     evento.getDiscoteca().setAdministrador(null);
                     evento.getDiscoteca().setZonas(null);
+                    evento.getDiscoteca().setEventos(null); // ¡Añadido: Limpiar la lista de eventos de la discoteca!
                 }
             }
             System.out.println("Backend: Eventos para discoteca NIT " + nitDiscoteca + " encontrados y enviados (200 OK). Cantidad: " + eventos.size());
@@ -114,6 +117,7 @@ public class EventosService {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
             List<Evento> eventos = eventosDao.obtenerListaEventosPorAdmin(adminId);
+            // La limpieza de referencias ya se hace en el DAO para estos métodos
             System.out.println("Backend: Eventos para admin " + adminId + " enviados (200 OK). Cantidad: " + eventos.size());
             return ResponseEntity.ok(eventos);
         } catch (Exception e) {
@@ -139,11 +143,32 @@ public class EventosService {
             }
             evento.setAdministrador(optionalAdmin.get()); // ¡Esto asegura que el objeto Administradores completo esté asociado!
 
+            // Si el evento tiene una discoteca, asegúrate de que sea una entidad gestionada
+            if (evento.getDiscoteca() != null && evento.getDiscoteca().getNit() != null) {
+                // Si solo viene el NIT de la discoteca, necesitas cargar la entidad completa
+                // Esto es importante si el frontend solo envía el NIT y no el objeto completo de Discoteca
+                // Necesitarías inyectar DiscotecasRepository aquí si no lo tienes
+                // @Autowired private DiscotecasRepository discotecasRepository;
+                // Optional<Discoteca> optionalDiscoteca = discotecasRepository.findById(evento.getDiscoteca().getNit());
+                // if (optionalDiscoteca.isPresent()) {
+                //     evento.setDiscoteca(optionalDiscoteca.get());
+                // } else {
+                //     System.err.println("Backend: Discoteca con NIT " + evento.getDiscoteca().getNit() + " no encontrada para asociar al evento.");
+                //     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                // }
+            }
+
+
             // Ahora, pasamos el objeto Evento ya completo al DAO
             Evento nuevo = eventosDao.registrarEvento(evento);
 
             // Opcional: Limpiar referencia de administrador para la respuesta JSON, si no la necesitas en el frontend
             nuevo.setAdministrador(null);
+            if (nuevo.getDiscoteca() != null) {
+                nuevo.getDiscoteca().setAdministrador(null);
+                nuevo.getDiscoteca().setZonas(null);
+                nuevo.getDiscoteca().setEventos(null); // ¡Añadido!
+            }
             System.out.println("Backend: Evento " + nuevo.getIdEvento() + " guardado por admin " + adminId + " (201 Created).");
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);
         } catch (Exception e) {
@@ -165,6 +190,11 @@ public class EventosService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
         actualizado.setAdministrador(null);
+        if (actualizado.getDiscoteca() != null) {
+            actualizado.getDiscoteca().setAdministrador(null);
+            actualizado.getDiscoteca().setZonas(null);
+            actualizado.getDiscoteca().setEventos(null); // ¡Añadido!
+        }
         System.out.println("Backend: Evento " + actualizado.getIdEvento() + " actualizado por admin " + adminId + " (200 OK).");
         return ResponseEntity.ok(actualizado);
     }
