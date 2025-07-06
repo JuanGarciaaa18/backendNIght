@@ -14,10 +14,10 @@ import com.BackNight.backendNIght.ws.mercadopago.dto.MercadoPagoCreatePreference
 import com.BackNight.backendNIght.ws.mercadopago.dto.MercadoPagoConfirmationRequest;
 import com.BackNight.backendNIght.ws.entity.Reserva;
 import com.BackNight.backendNIght.ws.entity.Evento;
-import com.BackNight.backendNIght.ws.entity.Clientes;
+import com.BackNight.backendNIght.ws.entity.Clientes; // Asegúrate de que esta clase Cliente se llame Clientes
 import com.BackNight.backendNIght.ws.repository.ReservaRepository;
 import com.BackNight.backendNIght.ws.repository.EventoRepository;
-import com.BackNight.backendNIght.ws.repository.ClientesRepository;
+import com.BackNight.backendNIght.ws.repository.ClientesRepository; // Asegúrate de que este repositorio sea para Clientes
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -44,25 +44,26 @@ public class MercadoPagoService {
 
     private final ReservaRepository reservaRepository;
     private final EventoRepository eventoRepository;
-    private final ClientesRepository clienteRepository;
+    private final ClientesRepository clienteRepository; // Renombrado de 'ClientesRepository' si tu clase se llama 'Cliente' en el paquete entity
 
     private static final Map<String, String> ZONA_ID_MAPPING = new HashMap<>();
 
     static {
+        // Asegúrate de que estos IDs numéricos coincidan con los IDs de tus zonas en la tabla `zonas` de la BD
         ZONA_ID_MAPPING.put("general", "1");
-        ZONA_ID_MAPPING.put("preferencial", "2"); // Asegúrate de que esto coincida con tu DB y frontend
-        ZONA_ID_MAPPING.put("vip", "3");          // Asegúrate de que esto coincida con tu DB y frontend
+        ZONA_ID_MAPPING.put("preferencial", "2");
+        ZONA_ID_MAPPING.put("vip", "3");
         // Agrega más mapeos aquí si tienes otras zonas (e.g., ZONA_ID_MAPPING.put("palco", "4");)
     }
 
     public MercadoPagoService(@Value("${mercadopago.access.token}") String accessToken,
                               ReservaRepository reservaRepository,
                               EventoRepository eventoRepository,
-                              ClientesRepository clienteRepository) {
+                              ClientesRepository clienteRepository) { // Usa ClientesRepository
         MercadoPagoConfig.setAccessToken(accessToken);
         this.reservaRepository = reservaRepository;
         this.eventoRepository = eventoRepository;
-        this.clienteRepository = clienteRepository;
+        this.clienteRepository = clienteRepository; // Asignación correcta
     }
 
     @Transactional
@@ -88,7 +89,7 @@ public class MercadoPagoService {
 
         Integer userId = orderRequest.getReservationDetails().getUserId();
         if (userId != null) {
-            Optional<Clientes> optionalCliente = clienteRepository.findById(userId);
+            Optional<Clientes> optionalCliente = clienteRepository.findById(userId); // Usa ClientesRepository
             if (optionalCliente.isEmpty()) {
                 log.warn("Cliente no encontrado con ID: {}. La reserva se creará sin cliente asociado.", userId);
                 preReserva.setCliente(null);
@@ -133,17 +134,19 @@ public class MercadoPagoService {
             }
 
             BigDecimal originalUnitPrice = item.getUnitPrice();
-            BigDecimal finalUnitPriceForMp; // Ahora es BigDecimal, no Double
+            BigDecimal finalUnitPriceForMp;
 
             if (originalUnitPrice == null || originalUnitPrice.compareTo(BigDecimal.ZERO) <= 0) {
                 log.error("Item unitPrice es nulo o no positivo para ítem ID: {}. Se usará BigDecimal.ZERO para MP.", itemIdToUse);
                 finalUnitPriceForMp = BigDecimal.ZERO;
             } else {
-                // *** INICIO DE LA MODIFICACIÓN CLAVE (PARA CUMPLIR BigDecimal Y CERO DECIMALES) ***
-                // Asegurar que el BigDecimal tiene 0 decimales y usar HALF_UP para redondeo
-                finalUnitPriceForMp = originalUnitPrice.setScale(0, RoundingMode.HALF_UP);
-                log.debug("Convertido original unitPrice {} a BigDecimal con 0 decimales {} para Mercado Pago.", originalUnitPrice, finalUnitPriceForMp);
-                // *** FIN DE LA MODIFICACIÓN CLAVE ***
+                // *** MODIFICACIÓN CLAVE (Conversión explícita a LONG y luego a BigDecimal para asegurar enteros para COP) ***
+                // 1. Redondea el BigDecimal original a un entero.
+                // 2. Conviértelo a un Long para asegurar que no hay decimales.
+                // 3. Crea un NUEVO BigDecimal a partir de ese Long, lo que garantiza un valor entero.
+                Long priceAsLong = originalUnitPrice.setScale(0, RoundingMode.HALF_UP).longValue();
+                finalUnitPriceForMp = BigDecimal.valueOf(priceAsLong); // Crea un BigDecimal a partir de un Long
+                log.debug("Convertido original unitPrice {} a Long {} y luego a BigDecimal {} para Mercado Pago.", originalUnitPrice, priceAsLong, finalUnitPriceForMp);
             }
 
             log.debug("Procesando item para MP: ID={}, Title={}, Quantity={}, UnitPrice (final para MP)={}",
@@ -156,7 +159,7 @@ public class MercadoPagoService {
                     .pictureUrl(item.getPictureUrl())
                     .quantity(item.getQuantity())
                     .currencyId(item.getCurrencyId())
-                    .unitPrice(finalUnitPriceForMp) // Ahora es BigDecimal
+                    .unitPrice(finalUnitPriceForMp)
                     .build();
         }).collect(Collectors.toList());
 
@@ -183,7 +186,7 @@ public class MercadoPagoService {
                 .binaryMode(false)
                 .expires(false)
                 .paymentMethods(PreferencePaymentMethodsRequest.builder()
-                        .installments(1)
+                        .installments(1) // Si solo permites 1 cuota
                         .build())
                 .build();
 
