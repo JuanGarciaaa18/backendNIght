@@ -13,7 +13,7 @@ public class Reserva {
     private Integer idReserva;
 
     @Column(name = "fecha_reserva")
-    private LocalDate fechaReserva; // Now uses LocalDate
+    private LocalDate fechaReserva;
 
     private String estado;
     @Column(name = "estado_pago")
@@ -25,7 +25,6 @@ public class Reserva {
     @Column(name = "id_transaccion")
     private String idTransaccion;
 
-    // CORRECTED: Removed precision and scale attributes. Hibernate will infer DECIMAL/NUMERIC.
     @Column(name = "monto_total")
     private BigDecimal montoTotal;
 

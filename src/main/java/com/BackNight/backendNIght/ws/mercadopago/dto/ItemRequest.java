@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonProperty; // Importar esta clase
 
 import java.math.BigDecimal;
-import java.util.List; // Necesario si no está ya
 
 @Data
 @Builder
@@ -21,6 +20,6 @@ public class ItemRequest {
     private Integer quantity;
     private String currencyId;
 
-    @JsonProperty("unit_price") // ¡Añade esta línea!
+    @JsonProperty("unit_price") // ¡CAMBIO CLAVE AQUÍ!
     private BigDecimal unitPrice;
 }

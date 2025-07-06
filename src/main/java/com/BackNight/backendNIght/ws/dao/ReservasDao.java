@@ -1,4 +1,3 @@
-// src/main/java/com/BackNight/backendNIght/ws/dao/ReservasDao.java
 package com.BackNight.backendNIght.ws.dao;
 
 import com.BackNight.backendNIght.ws.entity.Clientes;
@@ -22,27 +21,22 @@ public class ReservasDao {
 
     public Reserva consultarReservaIndividual(Integer id) {
         Reserva reserva = reservaRepository.findById(id).orElse(null);
-        if (reserva != null) {
-            limpiarReferenciasReserva(reserva);
-        }
+        // La limpieza de referencias ya no es necesaria aquí si usas DTOs y @JsonBackReference
+        // if (reserva != null) {
+        //     limpiarReferenciasReserva(reserva);
+        // }
         return reserva;
     }
 
     public List<Reserva> obtenerTodasReservas() {
         List<Reserva> reservas = reservaRepository.findAll();
-        for (Reserva r : reservas) {
-            limpiarReferenciasReserva(r);
-        }
+        // La limpieza de referencias ya no es necesaria aquí
+        // for (Reserva r : reservas) {
+        //     limpiarReferenciasReserva(r);
+        // }
         return reservas;
     }
 
-    /**
-     * Registra una nueva reserva.
-     * Si no se especifica un estado de pago, se establece como 'PENDIENTE'.
-     * @param reserva La reserva a registrar. Debe contener el ID del cliente.
-     * @return La reserva registrada.
-     * @throws RuntimeException Si el cliente no es encontrado.
-     */
     public Reserva registrarReserva(Reserva reserva) {
         if (reserva.getCliente() != null && reserva.getCliente().getIdCliente() != null) {
             Clientes cliente = clienteRepository.findById(reserva.getCliente().getIdCliente())
@@ -52,21 +46,16 @@ public class ReservasDao {
             throw new RuntimeException("El ID del cliente es requerido para registrar una reserva.");
         }
 
-        // Establecer estadoPago por defecto si no viene en la solicitud
         if (reserva.getEstadoPago() == null || reserva.getEstadoPago().isEmpty()) {
             reserva.setEstadoPago("PENDIENTE");
         }
 
         Reserva savedReserva = reservaRepository.save(reserva);
-        limpiarReferenciasReserva(savedReserva);
+        // La limpieza de referencias ya no es necesaria aquí
+        // limpiarReferenciasReserva(savedReserva);
         return savedReserva;
     }
 
-    /**
-     * Actualiza una reserva existente.
-     * @param reserva La reserva con los datos actualizados. Debe contener el ID de la reserva.
-     * @return La reserva actualizada o null si no existe.
-     */
     public Reserva actualizarReserva(Reserva reserva) {
         Optional<Reserva> existingReservaOpt = reservaRepository.findById(reserva.getIdReserva());
         if (existingReservaOpt.isPresent()) {
@@ -83,31 +72,26 @@ public class ReservasDao {
                 throw new RuntimeException("El ID del cliente es requerido para actualizar una reserva.");
             }
 
-            // Actualizar otros campos de la reserva
             reserva.setFechaReserva(reserva.getFechaReserva() != null ? reserva.getFechaReserva() : existingReserva.getFechaReserva());
             reserva.setEstado(reserva.getEstado() != null ? reserva.getEstado() : existingReserva.getEstado());
-            reserva.setEstadoPago(reserva.getEstadoPago() != null ? reserva.getEstadoPago() : existingReserva.getEstadoPago()); // ¡ACTUALIZAR ESTADOPAGO!
+            reserva.setEstadoPago(reserva.getEstadoPago() != null ? reserva.getEstadoPago() : existingReserva.getEstadoPago());
 
             Reserva updatedReserva = reservaRepository.save(reserva);
-            limpiarReferenciasReserva(updatedReserva);
+            // La limpieza de referencias ya no es necesaria aquí
+            // limpiarReferenciasReserva(updatedReserva);
             return updatedReserva;
         }
         return null;
     }
 
-    /**
-     * Actualiza solo el estado de pago de una reserva específica.
-     * @param idReserva El ID de la reserva a actualizar.
-     * @param nuevoEstadoPago El nuevo estado de pago (ej. "PAGADO", "PENDIENTE", "FALLIDO").
-     * @return La reserva actualizada o null si no existe.
-     */
     public Reserva actualizarEstadoPagoReserva(Integer idReserva, String nuevoEstadoPago) {
         Optional<Reserva> reservaOpt = reservaRepository.findById(idReserva);
         if (reservaOpt.isPresent()) {
             Reserva reserva = reservaOpt.get();
             reserva.setEstadoPago(nuevoEstadoPago);
             Reserva updatedReserva = reservaRepository.save(reserva);
-            limpiarReferenciasReserva(updatedReserva);
+            // La limpieza de referencias ya no es necesaria aquí
+            // limpiarReferenciasReserva(updatedReserva);
             return updatedReserva;
         }
         return null;
@@ -121,8 +105,6 @@ public class ReservasDao {
         return false;
     }
 
-    private void limpiarReferenciasReserva(Reserva reserva) {
-        // No se necesita limpiar nada si no hay relaciones circulares para el cliente
-        // Si hay, puedes hacer reserva.getCliente().setContrasena(null); etc.
-    }
+    // Este método ya no es necesario con @JsonBackReference y mapeo a DTOs
+    // private void limpiarReferenciasReserva(Reserva reserva) { }
 }

@@ -1,9 +1,8 @@
-// src/main/java/com/BackNight/backendNIght/ws/rest/ReservasService.java
 package com.BackNight.backendNIght.ws.rest;
 
-import com.BackNight.backendNIght.ws.service.ReservaService; // CAMBIO: Importa el nuevo servicio
-import com.BackNight.backendNIght.ws.entity.Reserva; // Sigue siendo necesaria si los métodos de modificación devuelven entidades
-import com.BackNight.backendNIght.ws.dto.ReservaDTO; // AÑADIDO: Importa el DTO
+import com.BackNight.backendNIght.ws.service.ReservaService;
+import com.BackNight.backendNIght.ws.entity.Reserva;
+import com.BackNight.backendNIght.ws.dto.ReservaDTO;
 import com.BackNight.backendNIght.ws.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,11 +13,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/servicio")
-@CrossOrigin(origins = "https://nightplus.vercel.app")
-public class ReservasService { // Este es tu controlador REST
+@CrossOrigin(origins = "https://nightplus.vercel.app") // Asegúrate de que esta URL es correcta
+public class ReservasService {
 
     @Autowired
-    private ReservaService reservaService; // CAMBIO: Inyecta el nuevo Servicio, no el DAO directamente
+    private ReservaService reservaService;
 
     private Integer getUsuarioIdFromAuthHeader(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
@@ -33,7 +32,6 @@ public class ReservasService { // Este es tu controlador REST
         return null;
     }
 
-    // --- Endpoint PRIVADO (ADMIN): Obtener TODAS las reservas (Ahora devuelve DTOs) ---
     @GetMapping("/admin/reservas")
     public ResponseEntity<List<ReservaDTO>> obtenerTodasLasReservas(@RequestHeader("Authorization") String authorizationHeader) {
         Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
@@ -41,7 +39,7 @@ public class ReservasService { // Este es tu controlador REST
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            List<ReservaDTO> reservas = reservaService.obtenerTodasLasReservasDTO(); // CAMBIO: Llama al servicio para DTOs
+            List<ReservaDTO> reservas = reservaService.obtenerTodasLasReservasDTO(); // Retorna DTOs
             return ResponseEntity.ok(reservas);
         } catch (Exception e) {
             e.printStackTrace();
@@ -49,8 +47,6 @@ public class ReservasService { // Este es tu controlador REST
         }
     }
 
-    // --- Endpoint PRIVADO (ADMIN): Registrar una nueva reserva ---
-    // Este endpoint sigue recibiendo y devolviendo la entidad, lo cual está bien si es el flujo deseado
     @PostMapping("/guardar-reserva")
     public ResponseEntity<Reserva> registrarReserva(@RequestBody Reserva reserva, @RequestHeader("Authorization") String authorizationHeader) {
         Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
@@ -58,7 +54,7 @@ public class ReservasService { // Este es tu controlador REST
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            Reserva nuevaReserva = reservaService.registrarReserva(reserva); // Llama al servicio
+            Reserva nuevaReserva = reservaService.registrarReserva(reserva);
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevaReserva);
         } catch (RuntimeException e) {
             System.err.println("Error al registrar reserva: " + e.getMessage());
@@ -69,7 +65,6 @@ public class ReservasService { // Este es tu controlador REST
         }
     }
 
-    // --- Endpoint PRIVADO (ADMIN): Actualizar una reserva existente ---
     @PutMapping("/actualizar-reserva")
     public ResponseEntity<Reserva> actualizarReserva(@RequestBody Reserva reserva, @RequestHeader("Authorization") String authorizationHeader) {
         Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
@@ -77,7 +72,7 @@ public class ReservasService { // Este es tu controlador REST
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            Reserva actualizada = reservaService.actualizarReserva(reserva); // Llama al servicio
+            Reserva actualizada = reservaService.actualizarReserva(reserva);
             if (actualizada == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
@@ -91,7 +86,6 @@ public class ReservasService { // Este es tu controlador REST
         }
     }
 
-    // --- NUEVO ENDPOINT PRIVADO (ADMIN): Actualizar el estado de pago de una reserva ---
     @PutMapping("/actualizar-estado-pago-reserva/{id}")
     public ResponseEntity<Reserva> actualizarEstadoPagoReserva(
             @PathVariable Integer id,
@@ -104,7 +98,7 @@ public class ReservasService { // Este es tu controlador REST
         }
 
         try {
-            Reserva updatedReserva = reservaService.actualizarEstadoPagoReserva(id, request.getEstadoPago()); // Llama al servicio
+            Reserva updatedReserva = reservaService.actualizarEstadoPagoReserva(id, request.getEstadoPago());
             if (updatedReserva == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
@@ -115,21 +109,13 @@ public class ReservasService { // Este es tu controlador REST
         }
     }
 
-    // Clase DTO interna para el RequestBody de actualizarEstadoPagoReserva
     static class EstadoPagoRequest {
         private String estadoPago;
 
-        public String getEstadoPago() {
-            return estadoPago;
-        }
-
-        public void setEstadoPago(String estadoPago) {
-            this.estadoPago = estadoPago;
-        }
+        public String getEstadoPago() { return estadoPago; }
+        public void setEstadoPago(String estadoPago) { this.estadoPago = estadoPago; }
     }
 
-
-    // --- Endpoint PRIVADO (ADMIN): Eliminar una reserva ---
     @DeleteMapping("/eliminar-reserva/{id}")
     public ResponseEntity<Void> eliminarReserva(@PathVariable Integer id, @RequestHeader("Authorization") String authorizationHeader) {
         Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
@@ -137,7 +123,7 @@ public class ReservasService { // Este es tu controlador REST
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            boolean eliminada = reservaService.eliminarReserva(id); // Llama al servicio
+            boolean eliminada = reservaService.eliminarReserva(id);
             if (!eliminada) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
@@ -148,12 +134,10 @@ public class ReservasService { // Este es tu controlador REST
         }
     }
 
-    // --- Opcional: Endpoint Público para obtener una reserva individual (si es necesario) ---
-    // Este endpoint también devolverá un DTO ahora
     @GetMapping("/reserva/{id}")
     public ResponseEntity<ReservaDTO> getReservaPublico(@PathVariable Integer id) {
         try {
-            ReservaDTO reserva = reservaService.consultarReservaIndividualDTO(id); // Llama al servicio para DTO
+            ReservaDTO reserva = reservaService.consultarReservaIndividualDTO(id); // Retorna DTO
             if (reserva == null) {
                 return ResponseEntity.notFound().build();
             }
