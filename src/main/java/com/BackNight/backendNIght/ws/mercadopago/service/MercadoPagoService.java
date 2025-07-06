@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode; // New import
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -123,19 +123,18 @@ public class MercadoPagoService {
                 log.warn("Item ID '{}' is not numeric and not in zone mapping.", item.getId());
             }
 
-            // *** START OF KEY CHANGE ***
-            // Ensure unitPrice is not null and has a defined scale and rounding mode
             BigDecimal finalUnitPrice = item.getUnitPrice();
             if (finalUnitPrice == null) {
                 log.error("Item unitPrice is null for item ID: {}. Setting to BigDecimal.ZERO.", itemIdToUse);
-                finalUnitPrice = BigDecimal.ZERO; // Default to zero if null to avoid NPE
+                finalUnitPrice = BigDecimal.ZERO;
             }
-            // Set scale to 2 (for cents/decimal places) and use HALF_EVEN rounding
-            finalUnitPrice = finalUnitPrice.setScale(2, RoundingMode.HALF_EVEN);
-            // *** END OF KEY CHANGE ***
+            // *** START OF MODIFICATION ***
+            // For COP, set scale to 0 (no decimal places) and use UP rounding mode
+            finalUnitPrice = finalUnitPrice.setScale(0, RoundingMode.UP); // Changed scale from 2 to 0
+            // *** END OF MODIFICATION ***
 
             log.debug("Processing item for MP: ID={}, Title={}, Quantity={}, UnitPrice={}",
-                    itemIdToUse, item.getTitle(), item.getQuantity(), finalUnitPrice); // Log the finalUnitPrice
+                    itemIdToUse, item.getTitle(), item.getQuantity(), finalUnitPrice);
 
             return PreferenceItemRequest.builder()
                     .id(itemIdToUse)
@@ -144,7 +143,7 @@ public class MercadoPagoService {
                     .pictureUrl(item.getPictureUrl())
                     .quantity(item.getQuantity())
                     .currencyId(item.getCurrencyId())
-                    .unitPrice(finalUnitPrice) // Use the potentially adjusted unitPrice
+                    .unitPrice(finalUnitPrice)
                     .build();
         }).collect(Collectors.toList());
 
