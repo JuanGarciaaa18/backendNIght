@@ -1,11 +1,10 @@
 package com.BackNight.backendNIght.ws.mercadopago.dto;
 
 public class MercadoPagoConfirmationRequest {
-    private String collectionId; // ID de transacción de Mercado Pago
-    private String status;       // Estado del pago (approved, pending, rejected)
-    private String preferenceId; // ID de la preferencia de Mercado Pago
+    private String collectionId;
+    private String status;
+    private String preferenceId;
 
-    // Constructor (puede que necesites un constructor vacío para Jackson)
     public MercadoPagoConfirmationRequest() {}
 
     public MercadoPagoConfirmationRequest(String collectionId, String status, String preferenceId) {
@@ -14,7 +13,6 @@ public class MercadoPagoConfirmationRequest {
         this.preferenceId = preferenceId;
     }
 
-    // Getters y Setters
     public String getCollectionId() { return collectionId; }
     public void setCollectionId(String collectionId) { this.collectionId = collectionId; }
     public String getStatus() { return status; }

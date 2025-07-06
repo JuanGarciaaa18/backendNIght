@@ -58,8 +58,6 @@ public class MercadoPagoService {
         log.debug("frontendBaseUrl cargado como: '{}'", frontendBaseUrl);
         log.debug("Datos de la solicitud de preferencia recibidos: {}", orderRequest);
 
-        // --- Verificaciones de entrada ---
-        // CLAVE: Aquí es donde se usan getItems() y getReservationDetails()
         if (orderRequest.getItems() == null || orderRequest.getItems().isEmpty()) {
             throw new IllegalArgumentException("El carrito no puede estar vacío.");
         }
@@ -67,10 +65,8 @@ public class MercadoPagoService {
             throw new IllegalArgumentException("Los detalles de la reserva no pueden ser nulos.");
         }
 
-        // --- 1. Crear una "Pre-reserva" en tu base de datos ---
         Reserva preReserva = new Reserva();
 
-        // Buscar y establecer el Evento
         Integer eventId = orderRequest.getReservationDetails().getEventId();
         Optional<Evento> optionalEvento = eventoRepository.findById(eventId);
         if (optionalEvento.isEmpty()) {
@@ -78,41 +74,36 @@ public class MercadoPagoService {
         }
         preReserva.setEvento(optionalEvento.get());
 
-        // Buscar y establecer el Cliente
         Integer userId = orderRequest.getReservationDetails().getUserId();
         if (userId != null) {
             Optional<Clientes> optionalCliente = clienteRepository.findById(userId);
             if (optionalCliente.isEmpty()) {
                 log.warn("Cliente no encontrado con ID: {}. La reserva se creará sin cliente asociado.", userId);
-                preReserva.setCliente(null); // O maneja esto según tu lógica de negocio
+                preReserva.setCliente(null);
             } else {
                 preReserva.setCliente(optionalCliente.get());
             }
         } else {
             log.warn("ID de usuario nulo. La reserva se creará sin cliente asociado.");
-            preReserva.setCliente(null); // O establece un cliente por defecto
+            preReserva.setCliente(null);
         }
 
-        // Calcular la cantidad total de tickets y el monto total
         int totalTickets = orderRequest.getReservationDetails().getTickets().stream()
                 .mapToInt(t -> t.getQuantity())
                 .sum();
         preReserva.setCantidadTickets(totalTickets);
 
-        // Ya es BigDecimal en el DTO de entrada, así que directamente:
         preReserva.setMontoTotal(orderRequest.getReservationDetails().getTotalAmount());
 
-        preReserva.setFechaReserva(LocalDate.now()); // Fecha actual de la pre-reserva
+        preReserva.setFechaReserva(LocalDate.now());
 
         preReserva.setEstado("Pendiente");
         preReserva.setEstadoPago("Pendiente");
         preReserva.setIdTransaccion(null);
 
-        // Guarda la pre-reserva para obtener un ID
         preReserva = reservaRepository.save(preReserva);
         log.info("Pre-reserva creada con ID: {}", preReserva.getIdReserva());
 
-        // --- 2. Crear la preferencia de Mercado Pago ---
         List<PreferenceItemRequest> itemsMp = orderRequest.getItems().stream().map(item -> {
             log.debug("Procesando item: ID={}, Title={}, Quantity={}, UnitPrice={}",
                     item.getId(), item.getTitle(), item.getQuantity(), item.getUnitPrice());
@@ -123,7 +114,7 @@ public class MercadoPagoService {
                     .pictureUrl(item.getPictureUrl())
                     .quantity(item.getQuantity())
                     .currencyId(item.getCurrencyId())
-                    .unitPrice(item.getUnitPrice()) // Ya es BigDecimal desde tu DTO
+                    .unitPrice(item.getUnitPrice())
                     .build();
         }).collect(Collectors.toList());
 
@@ -160,7 +151,6 @@ public class MercadoPagoService {
         log.info("Preferencia de pago creada con ID: {} e InitPoint: {}. External Reference: {}",
                 preference.getId(), preference.getInitPoint(), preference.getExternalReference());
 
-        // Actualiza la pre-reserva con el ID de preferencia de Mercado Pago
         preReserva.setPreferenceId(preference.getId());
         reservaRepository.save(preReserva);
 

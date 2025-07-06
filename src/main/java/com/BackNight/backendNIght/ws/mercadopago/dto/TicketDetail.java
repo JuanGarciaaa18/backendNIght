@@ -7,8 +7,7 @@ public class TicketDetail {
     private Integer quantity;
     private BigDecimal unitPrice;
 
-    public TicketDetail() {
-    }
+    public TicketDetail() {}
 
     public TicketDetail(Integer zonaId, Integer quantity, BigDecimal unitPrice) {
         this.zonaId = zonaId;
@@ -16,28 +15,10 @@ public class TicketDetail {
         this.unitPrice = unitPrice;
     }
 
-    // Getters y Setters
-    public Integer getZonaId() {
-        return zonaId;
-    }
-
-    public void setZonaId(Integer zonaId) {
-        this.zonaId = zonaId;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
-
-    public BigDecimal getUnitPrice() {
-        return unitPrice;
-    }
-
-    public void setUnitPrice(BigDecimal unitPrice) {
-        this.unitPrice = unitPrice;
-    }
+    public Integer getZonaId() { return zonaId; }
+    public void setZonaId(Integer zonaId) { this.zonaId = zonaId; }
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    public BigDecimal getUnitPrice() { return unitPrice; }
+    public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
 }

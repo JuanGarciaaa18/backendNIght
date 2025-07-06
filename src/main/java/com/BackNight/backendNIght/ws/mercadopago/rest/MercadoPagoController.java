@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/servicio")
-// ¡ELIMINADO! @CrossOrigin(origins = "http://localhost:5173") // <-- QUITA ESTO. La configuración global en SecurityConfig lo maneja.
 public class MercadoPagoController {
 
     private static final Logger log = LoggerFactory.getLogger(MercadoPagoController.class);

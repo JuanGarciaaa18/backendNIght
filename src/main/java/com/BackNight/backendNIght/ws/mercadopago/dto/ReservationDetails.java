@@ -9,8 +9,7 @@ public class ReservationDetails {
     private List<TicketDetail> tickets;
     private BigDecimal totalAmount;
 
-    public ReservationDetails() {
-    }
+    public ReservationDetails() {}
 
     public ReservationDetails(Integer eventId, Integer userId, List<TicketDetail> tickets, BigDecimal totalAmount) {
         this.eventId = eventId;
@@ -19,36 +18,12 @@ public class ReservationDetails {
         this.totalAmount = totalAmount;
     }
 
-    // Getters y Setters
-    public Integer getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(Integer eventId) {
-        this.eventId = eventId;
-    }
-
-    public Integer getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Integer userId) {
-        this.userId = userId;
-    }
-
-    public List<TicketDetail> getTickets() {
-        return tickets;
-    }
-
-    public void setTickets(List<TicketDetail> tickets) {
-        this.tickets = tickets;
-    }
-
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
-    }
+    public Integer getEventId() { return eventId; }
+    public void setEventId(Integer eventId) { this.eventId = eventId; }
+    public Integer getUserId() { return userId; }
+    public void setUserId(Integer userId) { this.userId = userId; }
+    public List<TicketDetail> getTickets() { return tickets; }
+    public void setTickets(List<TicketDetail> tickets) { this.tickets = tickets; }
+    public BigDecimal getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
 }

@@ -18,5 +18,5 @@ public class ItemRequest {
     private String pictureUrl;
     private Integer quantity;
     private String currencyId;
-    private BigDecimal unitPrice; // Consistente con BigDecimal
+    private BigDecimal unitPrice;
 }
