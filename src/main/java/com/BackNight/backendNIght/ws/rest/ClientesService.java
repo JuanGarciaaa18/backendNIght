@@ -6,22 +6,23 @@ import com.BackNight.backendNIght.ws.entity.Clientes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // Asegúrate de que esta dependencia está en tu pom.xml
 import org.springframework.web.bind.annotation.*;
 import com.BackNight.backendNIght.ws.service.EmailService;
 import com.BackNight.backendNIght.ws.util.CodigoVerificacionStore;
 import com.BackNight.backendNIght.ws.dto.ClienteLoginRequestDTO;
-import jakarta.validation.Valid; // Importar para validación de DTOs
+import jakarta.validation.Valid;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional; // Importar Optional
 import java.util.Random;
 
 @RestController
 @RequestMapping("/servicio")
 @CrossOrigin(origins = "https://nightplus.vercel.app")
-public class ClientesService { // Considera renombrar a ClientesController
+public class ClientesService { // Un nombre más común para un controlador es ClientesController
 
     @Autowired
     private ClientesDao clientesDao;
@@ -33,23 +34,37 @@ public class ClientesService { // Considera renombrar a ClientesController
     private CodigoVerificacionStore codigoStore;
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private BCryptPasswordEncoder passwordEncoder; // Utilizado para cifrar contraseñas
 
+
+    // Método auxiliar para extraer el ID del cliente del token
+    private Integer getClienteIdFromAuthHeader(String authorizationHeader) {
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7);
+            try {
+                return JwtUtil.extractIdUsuarioFromToken(token); // Asume que este método devuelve el ID del cliente
+            } catch (Exception e) {
+                System.err.println("Error al extraer ID de cliente del token: " + e.getMessage());
+                return null;
+            }
+        }
+        return null;
+    }
 
     @PostMapping("/registrar-cliente")
     public ResponseEntity<?> registrarCliente(@RequestBody Clientes cliente) {
         try {
-            // ¡¡IMPORTANTE: ELIMINA ESTA LÍNEA!!
+            // **¡IMPORTANTE!:** ELIMINA ESTA LÍNEA DE CIFRADO AQUÍ.
             // Tu DAO (clientesDao.registrarCliente) ya cifra la contraseña.
             // Si la dejas aquí, la contraseña se cifrará dos veces, lo cual es incorrecto.
             // cliente.setContrasenaCliente(passwordEncoder.encode(cliente.getContrasenaCliente()));
 
-            // El DAO se encarga de cifrar la contraseña antes de guardar.
-            Clientes nuevoCliente = clientesDao.registrarCliente(cliente);
+            Clientes nuevoCliente = clientesDao.registrarCliente(cliente); // El DAO ya cifra la contraseña
 
             String codigo = String.format("%06d", new Random().nextInt(999999));
             codigoStore.guardar(nuevoCliente.getCorreo(), codigo);
 
+            // Contenido HTML para el correo de verificación
             String contenidoHtml = "<html>" +
                     "<body style='font-family: Arial, sans-serif; background-color: #1a1a1a; padding: 20px;'>" +
                     "<div style='max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); padding: 30px; text-align: center;'>" +
@@ -72,50 +87,57 @@ public class ClientesService { // Considera renombrar a ClientesController
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            e.printStackTrace(); // Usa un logger en lugar de printStackTrace en producción.
+            e.printStackTrace(); // En un entorno de producción, usa un logger (ej. SLF4J con Logback).
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al registrar cliente: " + e.getMessage());
         }
     }
 
     @PutMapping("/update")
-    public ResponseEntity<?> actualizarCliente(@RequestBody Clientes cliente) {
+    public ResponseEntity<?> actualizarCliente(@RequestBody Clientes clienteActualizado, @RequestHeader("Authorization") String authorizationHeader) {
         try {
-            if (cliente.getCorreo() == null || cliente.getCorreo().isBlank()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El correo es obligatorio.");
+            Integer idClienteToken = getClienteIdFromAuthHeader(authorizationHeader);
+            if (idClienteToken == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No autorizado: Token inválido o ausente.");
             }
 
-            // Si el repositorio devuelve Optional<Clientes>, harías:
-            // Optional<Clientes> clienteExistenteOpt = clientesDao.obtenerPorCorreo(cliente.getCorreo());
-            // if (clienteExistenteOpt.isEmpty()) { ... }
-            // Clientes clienteExistente = clienteExistenteOpt.get();
-            Clientes clienteExistente = clientesDao.obtenerPorCorreo(cliente.getCorreo());
-            if (clienteExistente == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cliente no encontrado.");
+            // Obtener el cliente existente de la base de datos por el ID del token
+            Optional<Clientes> clienteExistenteOpt = clientesDao.findById(idClienteToken);
+            if (clienteExistenteOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cliente no encontrado para el ID del token.");
             }
+            Clientes clienteExistente = clienteExistenteOpt.get();
 
-            // Asegurar que el ID y el usuario se mantengan del cliente existente
-            cliente.setIdCliente(clienteExistente.getIdCliente());
-            // Solo si no quieres que el cliente actualice su usuario_cliente desde el request:
-            cliente.setUsuarioCliente(clienteExistente.getUsuarioCliente());
-
-
-            if (cliente.getContrasenaCliente() != null && !cliente.getContrasenaCliente().isBlank()) {
-                // Correcto: Hashea la nueva contraseña aquí en el servicio antes de pasarla al DAO.
-                cliente.setContrasenaCliente(passwordEncoder.encode(cliente.getContrasenaCliente()));
-            } else {
-                // Si la contraseña no se envía en el request, se mantiene la existente.
-                cliente.setContrasenaCliente(clienteExistente.getContrasenaCliente());
+            // Actualizar solo los campos que se permiten modificar
+            if (clienteActualizado.getNombre() != null && !clienteActualizado.getNombre().isBlank()) {
+                clienteExistente.setNombre(clienteActualizado.getNombre());
             }
+            if (clienteActualizado.getEdad() != null) {
+                clienteExistente.setEdad(clienteActualizado.getEdad());
+            }
+            if (clienteActualizado.getTelefono() != null && !clienteActualizado.getTelefono().isBlank()) {
+                clienteExistente.setTelefono(clienteActualizado.getTelefono());
+            }
+            // El correo NO DEBERÍA poder cambiarse así sin un proceso de verificación adicional
+            // Si permites cambiar el correo, considera un proceso de re-verificación de email.
+            // Por ahora, lo mantenemos como el existente.
+            // if (clienteActualizado.getCorreo() != null && !clienteActualizado.getCorreo().isBlank()) {
+            //     clienteExistente.setCorreo(clienteActualizado.getCorreo());
+            // }
 
-            // Comenta o elimina esta línea en producción:
-            System.out.println("Contraseña que se guardará (hasheada): " + cliente.getContrasenaCliente());
+            // La contraseña solo se actualiza si se envía una nueva en el request
+            if (clienteActualizado.getContrasenaCliente() != null && !clienteActualizado.getContrasenaCliente().isBlank()) {
+                clienteExistente.setContrasenaCliente(passwordEncoder.encode(clienteActualizado.getContrasenaCliente()));
+            }
+            // El usuarioCliente no debería ser actualizado por el cliente mismo en este endpoint
+            // si el nombre de usuario es un identificador único y permanente.
+            // Si lo permites, asegúrate de validar que no haya duplicados.
 
-            Clientes actualizado = clientesDao.actualizarCliente(cliente);
+            Clientes clienteActualizadoDB = clientesDao.actualizarCliente(clienteExistente);
 
-            return ResponseEntity.ok(actualizado);
+            return ResponseEntity.ok(clienteActualizadoDB);
         } catch (Exception e) {
-            e.printStackTrace(); // Usar logger.
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar: " + e.getMessage());
         }
     }
@@ -124,7 +146,6 @@ public class ClientesService { // Considera renombrar a ClientesController
     public ResponseEntity<?> solicitarRecuperacion(@RequestBody Map<String, String> payload) {
         String correo = payload.get("correo");
 
-        // ¡OPTIMIZACIÓN CRÍTICA! Usar directamente el método que busca por correo.
         Clientes cliente = clientesDao.obtenerPorCorreo(correo);
 
         if (cliente == null) {
@@ -156,8 +177,6 @@ public class ClientesService { // Considera renombrar a ClientesController
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado.");
         }
 
-        // Correcto: El método `actualizarContrasena` del DAO ya se encarga de cifrar
-        // la `nuevaContrasena` (que llega aquí en texto plano).
         clientesDao.actualizarContrasena(cliente, nuevaContrasena);
 
         return ResponseEntity.ok("Contraseña actualizada correctamente.");
@@ -187,15 +206,12 @@ public class ClientesService { // Considera renombrar a ClientesController
 
     @PostMapping("/login-cliente")
     public ResponseEntity<?> loginClientes(@Valid @RequestBody ClienteLoginRequestDTO loginRequest) {
-        // La lógica de verificación de contraseña hasheada está en el DAO, lo cual es correcto.
-        // Aquí no necesitas usar passwordEncoder.matches() directamente.
         Clientes encontrado = clientesDao.loginClientes(
                 loginRequest.getUsuarioCliente(),
-                loginRequest.getContrasenaCliente() // Esta es la contraseña en texto plano
+                loginRequest.getContrasenaCliente()
         );
 
         if (encontrado == null) {
-            // Este mensaje se devuelve si el usuario no existe O si la contraseña es incorrecta
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas");
         }
 
@@ -215,7 +231,6 @@ public class ClientesService { // Considera renombrar a ClientesController
         ));
     }
 
-    // Clase para enviar la respuesta del login del cliente
     public static class ClienteLoginResponse {
         private String usuario, correo, nombre, token;
         private Integer idCliente;
@@ -228,7 +243,6 @@ public class ClientesService { // Considera renombrar a ClientesController
             this.idCliente = idCliente;
         }
 
-        // Getters para los campos
         public String getUsuario() { return usuario; }
         public String getCorreo() { return correo; }
         public String getNombre() { return nombre; }
