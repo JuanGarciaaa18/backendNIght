@@ -30,6 +30,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.HashMap; // Nuevo import
+import java.util.Map;   // Nuevo import
 
 @Service
 public class MercadoPagoService {
@@ -42,6 +44,17 @@ public class MercadoPagoService {
     private final ReservaRepository reservaRepository;
     private final EventoRepository eventoRepository;
     private final ClientesRepository clienteRepository;
+
+    // Mapa para convertir IDs de zona de string a numérico (si es necesario)
+    private static final Map<String, String> ZONA_ID_MAPPING = new HashMap<>();
+
+    static {
+        // Aquí defines el mapeo de tus IDs de zona.
+        // Por ejemplo, "general" -> "1", "vip" -> "2", etc.
+        // Ajusta estos valores según los IDs numéricos que tengas para tus zonas.
+        ZONA_ID_MAPPING.put("general", "1");
+        // Agrega más mapeos si tienes otras zonas (ej. ZONA_ID_MAPPING.put("vip", "2");)
+    }
 
     public MercadoPagoService(@Value("${mercadopago.access.token}") String accessToken,
                               ReservaRepository reservaRepository,
@@ -105,10 +118,25 @@ public class MercadoPagoService {
         log.info("Pre-reserva creada con ID: {}", preReserva.getIdReserva());
 
         List<PreferenceItemRequest> itemsMp = orderRequest.getItems().stream().map(item -> {
+            String itemIdToUse = item.getId();
+            // *** INICIO DEL CAMBIO CLAVE ***
+            // Si el ID del ítem recibido del frontend es una cadena no numérica como "general",
+            // intentamos mapearla a un ID numérico string
+            if (ZONA_ID_MAPPING.containsKey(item.getId().toLowerCase())) {
+                itemIdToUse = ZONA_ID_MAPPING.get(item.getId().toLowerCase());
+                log.debug("Mapeando ID de ítem '{}' a ID numérico '{}' para Mercado Pago.", item.getId(), itemIdToUse);
+            } else {
+                // Si el ID no está en el mapeo, y no es un número, podríamos loggear una advertencia
+                // o manejarlo de otra manera si se esperan solo IDs numéricos.
+                // Aquí, simplemente lo dejamos como está si no hay un mapeo directo.
+                log.warn("El ID de ítem '{}' no es un número ni está en el mapeo de zonas.", item.getId());
+            }
+            // *** FIN DEL CAMBIO CLAVE ***
+
             log.debug("Procesando item: ID={}, Title={}, Quantity={}, UnitPrice={}",
-                    item.getId(), item.getTitle(), item.getQuantity(), item.getUnitPrice());
+                    itemIdToUse, item.getTitle(), item.getQuantity(), item.getUnitPrice());
             return PreferenceItemRequest.builder()
-                    .id(item.getId())
+                    .id(itemIdToUse) // Usamos el ID mapeado o el original
                     .title(item.getTitle())
                     .description(item.getDescription())
                     .pictureUrl(item.getPictureUrl())
