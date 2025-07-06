@@ -1,8 +1,8 @@
 package com.BackNight.backendNIght.ws.dao;
 
-import com.BackNight.backendNIght.ws.entity.Administradores; // Se mantiene si otros métodos lo necesitan
+import com.BackNight.backendNIght.ws.entity.Administradores;
 import com.BackNight.backendNIght.ws.entity.Evento;
-import com.BackNight.backendNIght.ws.repository.AdministradoresRepository; // Se mantiene si otros métodos lo necesitan
+import com.BackNight.backendNIght.ws.repository.AdministradoresRepository;
 import com.BackNight.backendNIght.ws.repository.EventoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,7 @@ public class EventosDao {
     private EventoRepository eventoRepository;
 
     @Autowired
-    private AdministradoresRepository administradoresRepository; // Se mantiene si lo usas en otros métodos del DAO
+    private AdministradoresRepository administradoresRepository;
 
     public Evento consultarEventoIndividual(Integer id) {
         Evento evento = eventoRepository.findById(id).orElse(null);
@@ -91,7 +91,7 @@ public class EventosDao {
      * @param evento El evento a registrar.
      * @return El evento registrado.
      */
-    public Evento registrarEvento(Evento evento) { // <-- ¡CAMBIO AQUÍ! Ya no recibe idAdmin
+    public Evento registrarEvento(Evento evento) {
         // Verificación adicional, aunque el servicio debería asegurarlo
         if (evento.getAdministrador() == null || evento.getAdministrador().getIdAdmin() == null) {
             throw new IllegalArgumentException("El objeto Evento debe tener un Administrador asociado con un ID válido.");

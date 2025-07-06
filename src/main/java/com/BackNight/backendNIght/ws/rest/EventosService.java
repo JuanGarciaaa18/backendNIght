@@ -140,7 +140,7 @@ public class EventosService {
             evento.setAdministrador(optionalAdmin.get()); // ¡Esto asegura que el objeto Administradores completo esté asociado!
 
             // Ahora, pasamos el objeto Evento ya completo al DAO
-            Evento nuevo = eventosDao.registrarEvento(evento); // <-- ¡Cambio! Ya no se pasa idAdmin
+            Evento nuevo = eventosDao.registrarEvento(evento);
 
             // Opcional: Limpiar referencia de administrador para la respuesta JSON, si no la necesitas en el frontend
             nuevo.setAdministrador(null);

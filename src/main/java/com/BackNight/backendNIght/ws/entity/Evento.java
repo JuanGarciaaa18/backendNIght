@@ -1,9 +1,10 @@
 package com.BackNight.backendNIght.ws.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference; // Puede que necesites esta
-import com.fasterxml.jackson.annotation.JsonManagedReference; // Asegúrate de importar esta
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import java.util.List; // Importa List
+import java.math.BigDecimal; // Importa BigDecimal
+import java.util.List;
 
 @Entity
 @Table(name = "eventos")
@@ -16,31 +17,35 @@ public class Evento {
     private String descripcion;
     private String fecha;
     private String hora;
-    private double precio;
+
+    // **CAMBIO IMPORTANTE:** Usar BigDecimal para precios
+    @Column(name = "precio")
+    private BigDecimal precio;
+
     private String imagen;
 
     // Relación con Discoteca
-    @ManyToOne(fetch = FetchType.LAZY) // CAMBIO: A LAZY (si Discoteca tiene List<Evento>)
-    @JoinColumn(name = "nit_discoteca")
-    @JsonBackReference("discoteca-eventos") // AÑADIDO: Rompe el ciclo. Nombre debe coincidir en Discoteca
-    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ELIMINAR
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nit_discoteca") // ¡Asegúrate que esta columna exista y esté correcta en tu DB!
+    @JsonBackReference("discoteca-eventos")
     private Discoteca discoteca;
 
     // Relación con Administradores
-    @ManyToOne(fetch = FetchType.LAZY) // CAMBIO: A LAZY (si Administradores tiene List<Evento>)
-    @JoinColumn(name = "id_admin")
-    @JsonBackReference("administrador-eventos") // AÑADIDO: Rompe el ciclo. Nombre debe coincidir en Administradores
-    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ELIMINAR
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_admin") // ¡Asegúrate que esta columna exista y esté correcta en tu DB!
+    @JsonBackReference("administrador-eventos")
     private Administradores administrador;
 
-    // RELACIÓN AÑADIDA: Un evento puede tener muchas reservas
+    // Relación con Reservas
     @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("evento-reservas") // AÑADIDO: Lado "padre" de la relación con Reserva
+    @JsonManagedReference("evento-reservas")
     private List<Reserva> reservas;
 
-    // --- Getters y Setters ---
-    // ... (Mantén tus getters y setters existentes, y añade para 'reservas')
+    // Constructor por defecto (necesario para JPA)
+    public Evento() {
+    }
 
+    // --- Getters y Setters ---
     public Integer getIdEvento() {
         return idEvento;
     }
@@ -81,11 +86,11 @@ public class Evento {
         this.hora = hora;
     }
 
-    public double getPrecio() {
+    public BigDecimal getPrecio() { // Tipo de retorno BigDecimal
         return precio;
     }
 
-    public void setPrecio(double precio) {
+    public void setPrecio(BigDecimal precio) { // Parámetro BigDecimal
         this.precio = precio;
     }
 
