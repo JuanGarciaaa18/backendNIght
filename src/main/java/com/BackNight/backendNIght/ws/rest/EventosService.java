@@ -2,8 +2,8 @@ package com.BackNight.backendNIght.ws.rest;
 
 import com.BackNight.backendNIght.ws.dao.EventosDao;
 import com.BackNight.backendNIght.ws.entity.Evento;
-import com.BackNight.backendNIght.ws.entity.Administradores; // <-- AGREGAR ESTA IMPORTACIÓN
-import com.BackNight.backendNIght.ws.repository.AdministradoresRepository; // <-- AGREGAR ESTA IMPORTACIÓN (o tu DAO de Administradores)
+import com.BackNight.backendNIght.ws.entity.Administradores;
+import com.BackNight.backendNIght.ws.repository.AdministradoresRepository;
 import com.BackNight.backendNIght.ws.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional; // <-- AGREGAR ESTA IMPORTACIÓN
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/servicio")
@@ -22,7 +22,7 @@ public class EventosService {
     private EventosDao eventosDao;
 
     @Autowired
-    private AdministradoresRepository administradoresRepository; // <-- INYECTAR REPOSITORIO DE ADMINISTRADORES
+    private AdministradoresRepository administradoresRepository;
 
     // Método de ayuda para extraer el ID del usuario (administrador) desde el token JWT
     private Integer getUsuarioIdFromAuthHeader(String authorizationHeader) {
@@ -133,16 +133,16 @@ public class EventosService {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
 
-            // --- CAMBIO CRÍTICO AQUÍ: Cargar y asignar el objeto Administradores ---
+            // --- CAMBIO CRÍTICO AQUÍ: Cargar y asignar el objeto Administradores ANTES de llamar al DAO ---
             Optional<Administradores> optionalAdmin = administradoresRepository.findById(adminId);
             if (optionalAdmin.isEmpty()) {
                 System.err.println("Backend: Administrador con ID " + adminId + " no encontrado para guardar evento.");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // O 404 NOT FOUND si prefieres
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             }
             evento.setAdministrador(optionalAdmin.get()); // Asignar el objeto Administradores completo
 
-            // Aquí, en el DAO, es crucial que `evento.getDiscoteca()` no sea nulo y tenga un NIT válido
-            Evento nuevo = eventosDao.registrarEvento(evento, adminId);
+            // --- CAMBIO AQUÍ: Llamar al DAO sin pasar el idAdmin, ya que el Evento ya lo tiene ---
+            Evento nuevo = eventosDao.registrarEvento(evento); // <-- ¡CAMBIO! Ya no se pasa idAdmin aquí
 
             // Si necesitas limpiar la referencia del administrador para la respuesta JSON, hazlo después de guardar
             nuevo.setAdministrador(null);
@@ -161,9 +161,6 @@ public class EventosService {
         if (adminId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        // También aquí, si 'id_admin' es NOT NULL, deberías cargar y setear el administrador
-        // si no estás seguro de que el objeto 'evento' del @RequestBody lo trae completo.
-        // Por simplicidad, asumimos que el DAO ya maneja esto o que el campo no se actualiza.
         Evento actualizado = eventosDao.actualizarEvento(evento, adminId);
         if (actualizado == null) {
             System.out.println("Backend: Evento " + evento.getIdEvento() + " no encontrado o no autorizado para actualizar (404).");
