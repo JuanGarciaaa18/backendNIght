@@ -1,8 +1,8 @@
 package com.BackNight.backendNIght.ws.dao;
 
-import com.BackNight.backendNIght.ws.entity.Administradores;
+import com.BackNight.backendNIght.ws.entity.Administradores; // Se mantiene si otros métodos lo necesitan
 import com.BackNight.backendNIght.ws.entity.Evento;
-import com.BackNight.backendNIght.ws.repository.AdministradoresRepository;
+import com.BackNight.backendNIght.ws.repository.AdministradoresRepository; // Se mantiene si otros métodos lo necesitan
 import com.BackNight.backendNIght.ws.repository.EventoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,13 +17,8 @@ public class EventosDao {
     private EventoRepository eventoRepository;
 
     @Autowired
-    private AdministradoresRepository administradoresRepository;
+    private AdministradoresRepository administradoresRepository; // Se mantiene si lo usas en otros métodos del DAO
 
-    /**
-     * Consulta un evento individual por su ID.
-     * @param id El ID del evento.
-     * @return El evento encontrado o null si no existe.
-     */
     public Evento consultarEventoIndividual(Integer id) {
         Evento evento = eventoRepository.findById(id).orElse(null);
         if (evento != null) {
@@ -40,12 +35,6 @@ public class EventosDao {
         return evento;
     }
 
-    /**
-     * Obtiene una lista de eventos filtrados por el ID del administrador.
-     * Se limpian las referencias a entidades relacionadas para evitar problemas de serialización JSON.
-     * @param idAdmin El ID del administrador para filtrar.
-     * @return Una lista de eventos que pertenecen al administrador.
-     */
     public List<Evento> obtenerListaEventosPorAdmin(Integer idAdmin) {
         List<Evento> eventos = eventoRepository.findByAdministrador_IdAdmin(idAdmin);
         for (Evento e : eventos) {
@@ -63,11 +52,6 @@ public class EventosDao {
         return eventos;
     }
 
-    /**
-     * Obtiene una lista de *todos* los eventos disponibles.
-     * Limpia referencias para evitar problemas de serialización JSON.
-     * @return Una lista de todos los eventos.
-     */
     public List<Evento> obtenerTodosEventos() {
         List<Evento> eventos = eventoRepository.findAll();
         for (Evento e : eventos) {
@@ -85,11 +69,6 @@ public class EventosDao {
         return eventos;
     }
 
-    /**
-     * Consulta una lista de eventos por el NIT de la discoteca a la que pertenecen.
-     * @param nitDiscoteca El NIT de la discoteca.
-     * @return Una lista de eventos asociados a esa discoteca.
-     */
     public List<Evento> consultarEventosPorDiscotecaNit(Integer nitDiscoteca) {
         List<Evento> eventos = eventoRepository.findByDiscoteca_Nit(nitDiscoteca);
         for (Evento e : eventos) {
@@ -112,11 +91,10 @@ public class EventosDao {
      * @param evento El evento a registrar.
      * @return El evento registrado.
      */
-    public Evento registrarEvento(Evento evento) { // <-- ¡CAMBIO AQUÍ! Eliminado el parámetro idAdmin
-        // El administrador ya debería estar seteado en el objeto 'evento'
+    public Evento registrarEvento(Evento evento) { // <-- ¡CAMBIO AQUÍ! Ya no recibe idAdmin
+        // Verificación adicional, aunque el servicio debería asegurarlo
         if (evento.getAdministrador() == null || evento.getAdministrador().getIdAdmin() == null) {
-            // Esto no debería ocurrir si el servicio lo preparó correctamente, pero es una buena verificación
-            throw new IllegalArgumentException("El objeto Evento debe tener un Administrador asociado con un ID válido antes de guardarlo.");
+            throw new IllegalArgumentException("El objeto Evento debe tener un Administrador asociado con un ID válido.");
         }
 
         if (evento.getDiscoteca() != null) {
@@ -126,31 +104,21 @@ public class EventosDao {
         }
 
         System.out.println("DEBUG DAO: registrarEvento - Recibida imagen Base64 para guardar, longitud: " + (evento.getImagen() != null ? evento.getImagen().length() : "null"));
-        Evento savedEvento = eventoRepository.save(evento); // <-- Esta es la línea 144
+        Evento savedEvento = eventoRepository.save(evento);
         System.out.println("DEBUG DAO: registrarEvento - Imagen Base64 guardada, longitud: " + (savedEvento.getImagen() != null ? savedEvento.getImagen().length() : "null"));
         return savedEvento;
     }
 
-    /**
-     * Actualiza un evento existente, validando la propiedad del administrador.
-     * @param evento El evento con los datos actualizados.
-     * @param idAdmin El ID del administrador que intenta actualizar.
-     * @return El evento actualizado o null si no existe o no pertenece al administrador.
-     */
     public Evento actualizarEvento(Evento evento, Integer idAdmin) {
         Optional<Evento> existingEventoOpt = eventoRepository.findById(evento.getIdEvento());
         if (existingEventoOpt.isPresent()) {
             Evento existingEvento = existingEventoOpt.get();
             if (existingEvento.getAdministrador().getIdAdmin().equals(idAdmin)) {
-                // Si la imagen nueva es null, mantén la existente (para no borrarla si no se carga una nueva)
                 if (evento.getImagen() == null && existingEvento.getImagen() != null) {
                     evento.setImagen(existingEvento.getImagen());
                 }
-
-                // Mantenemos el mismo administrador original para el evento
                 evento.setAdministrador(existingEvento.getAdministrador());
 
-                // Si el evento recibido NO tiene discoteca, pero el existente SÍ, mantenemos la discoteca existente.
                 if (evento.getDiscoteca() == null && existingEvento.getDiscoteca() != null) {
                     evento.setDiscoteca(existingEvento.getDiscoteca());
                     System.out.println("DEBUG DAO: actualizarEvento - Manteniendo Discoteca existente con NIT: " + existingEvento.getDiscoteca().getNit());
@@ -167,12 +135,6 @@ public class EventosDao {
         return null;
     }
 
-    /**
-     * Elimina un evento, validando la propiedad del administrador.
-     * @param id El ID del evento a eliminar.
-     * @param idAdmin El ID del administrador que intenta eliminar.
-     * @return true si el evento fue eliminado, false en caso contrario.
-     */
     public boolean eliminarEvento(Integer id, Integer idAdmin) {
         Optional<Evento> eventoOpt = eventoRepository.findById(id);
         if (eventoOpt.isPresent()) {

@@ -48,8 +48,7 @@ public class EventosService {
                 System.out.println("Backend: Evento con ID " + id + " no encontrado (404).");
                 return ResponseEntity.notFound().build();
             }
-            // Limpiar referencias para evitar ciclos JSON y exponer solo lo necesario
-            evento.setAdministrador(null);
+            evento.setAdministrador(null); // Limpiar para evitar ciclos JSON
             if (evento.getDiscoteca() != null) {
                 evento.getDiscoteca().setAdministrador(null);
                 evento.getDiscoteca().setZonas(null);
@@ -124,7 +123,6 @@ public class EventosService {
         }
     }
 
-    // Otros endpoints de gestión (POST, PUT, DELETE) para administradores...
     @PostMapping("/guardar-evento")
     public ResponseEntity<Evento> registrarEvento(@RequestBody Evento evento, @RequestHeader("Authorization") String authorizationHeader) {
         try {
@@ -133,18 +131,18 @@ public class EventosService {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
 
-            // --- CAMBIO CRÍTICO AQUÍ: Cargar y asignar el objeto Administradores ANTES de llamar al DAO ---
+            // --- CRÍTICO: Cargar y asignar el objeto Administradores antes de pasar el Evento al DAO ---
             Optional<Administradores> optionalAdmin = administradoresRepository.findById(adminId);
             if (optionalAdmin.isEmpty()) {
                 System.err.println("Backend: Administrador con ID " + adminId + " no encontrado para guardar evento.");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             }
-            evento.setAdministrador(optionalAdmin.get()); // Asignar el objeto Administradores completo
+            evento.setAdministrador(optionalAdmin.get()); // ¡Esto asegura que el objeto Administradores completo esté asociado!
 
-            // --- CAMBIO AQUÍ: Llamar al DAO sin pasar el idAdmin, ya que el Evento ya lo tiene ---
-            Evento nuevo = eventosDao.registrarEvento(evento); // <-- ¡CAMBIO! Ya no se pasa idAdmin aquí
+            // Ahora, pasamos el objeto Evento ya completo al DAO
+            Evento nuevo = eventosDao.registrarEvento(evento); // <-- ¡Cambio! Ya no se pasa idAdmin
 
-            // Si necesitas limpiar la referencia del administrador para la respuesta JSON, hazlo después de guardar
+            // Opcional: Limpiar referencia de administrador para la respuesta JSON, si no la necesitas en el frontend
             nuevo.setAdministrador(null);
             System.out.println("Backend: Evento " + nuevo.getIdEvento() + " guardado por admin " + adminId + " (201 Created).");
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);
