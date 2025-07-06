@@ -7,6 +7,7 @@ public class DiscotecaInfoDTO {
     public DiscotecaInfoDTO() {}
 
     public DiscotecaInfoDTO(Integer nit, String nombre) {
+
         this.nit = nit;
         this.nombre = nombre;
     }
