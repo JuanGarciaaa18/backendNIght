@@ -5,11 +5,11 @@ import com.BackNight.backendNIght.ws.entity.Evento; // Asegúrate de importar Ev
 import com.BackNight.backendNIght.ws.entity.Clientes; // Asegúrate de importar Clientes
 
 import java.math.BigDecimal;
-import java.time.LocalDate; // Mantenemos LocalDate para fechaReserva, pero fechaEvento será String
+import java.time.LocalDate;
 
 public class ReservaDTO {
     private Integer idReserva;
-    private LocalDate fechaReserva; // Sigue siendo LocalDate
+    private LocalDate fechaReserva;
     private String estado;
     private String estadoPago;
     private Integer cantidadTickets;
@@ -21,21 +21,16 @@ public class ReservaDTO {
     private Integer idEvento;
     private String nombreEvento;
     private String descripcionEvento;
-    private String fechaEvento; // CAMBIO: Ahora es String
-    // ¡ELIMINADOS! Estos campos no existen en la entidad Evento
-    // private String ciudadEvento;
-    // private String lugarEvento;
-    // private String direccionEvento;
-    // private String tipoEvento;
+    private String fechaEvento; // String para coincidir con Evento.java
     private BigDecimal precioEvento;
     private String imagenEvento;
 
 
-    // Campos relacionados con el Cliente (solo lo necesario para el DTO)
+    // CAMPOS DE CLIENTE AÑADIDOS/VERIFICADOS
     private Integer idCliente;
-    private String nombreCliente;
+    private String nombreCliente; // Para mostrar el nombre del usuario
     private String correoCliente;
-    private String usuarioCliente;
+    private String usuarioCliente; // Para mostrar el usuario del cliente
 
 
     // 1. Constructor vacío (necesario para algunos frameworks/librerías)
@@ -57,26 +52,18 @@ public class ReservaDTO {
         if (reserva.getEvento() != null) {
             this.idEvento = reserva.getEvento().getIdEvento();
             this.nombreEvento = reserva.getEvento().getNombreEvento();
-            this.descripcionEvento = reserva.getEvento().getDescripcion();
-            this.fechaEvento = reserva.getEvento().getFecha(); // CAMBIO: Asignamos String directamente
-
-            // ¡ELIMINADOS! No se mapean porque no existen en Evento.java
-            // this.ciudadEvento = reserva.getEvento().getCiudad();
-            // this.lugarEvento = reserva.getEvento().getLugar();
-            // this.direccionEvento = reserva.getEvento().getDireccion();
-            // this.tipoEvento = reserva.getEvento().getTipo();
-
+            this.descripcionEvento = reserva.getEvento().getDescripcion(); // Getter correcto de Evento
+            this.fechaEvento = reserva.getEvento().getFecha(); // Getter correcto de Evento
             this.precioEvento = reserva.getEvento().getPrecio();
             this.imagenEvento = reserva.getEvento().getImagen();
-
         }
 
         // Mapea la información del Cliente si existe
         if (reserva.getCliente() != null) {
             this.idCliente = reserva.getCliente().getIdCliente();
-            this.nombreCliente = reserva.getCliente().getNombre();
+            this.nombreCliente = reserva.getCliente().getNombre(); // Getter correcto de Clientes
             this.correoCliente = reserva.getCliente().getCorreo();
-            this.usuarioCliente = reserva.getCliente().getUsuarioCliente();
+            this.usuarioCliente = reserva.getCliente().getUsuarioCliente(); // Getter correcto de Clientes
         }
     }
 
@@ -104,7 +91,7 @@ public class ReservaDTO {
 
 
     // --- GETTERS Y SETTERS ---
-    // (Asegúrate de tener todos los getters y setters para todos los campos aquí)
+    // Asegúrate de tener todos los getters y setters para todos los campos aquí.
 
     public Integer getIdReserva() {
         return idReserva;
@@ -194,23 +181,13 @@ public class ReservaDTO {
         this.descripcionEvento = descripcionEvento;
     }
 
-    public String getFechaEvento() { // CAMBIO: Getter devuelve String
+    public String getFechaEvento() {
         return fechaEvento;
     }
 
-    public void setFechaEvento(String fechaEvento) { // CAMBIO: Setter acepta String
+    public void setFechaEvento(String fechaEvento) {
         this.fechaEvento = fechaEvento;
     }
-
-    // ¡ELIMINADOS! Getters y setters para ciudadEvento, lugarEvento, direccionEvento, tipoEvento
-    // public String getCiudadEvento() { return ciudadEvento; }
-    // public void setCiudadEvento(String ciudadEvento) { this.ciudadEvento = ciudadEvento; }
-    // public String getLugarEvento() { return lugarEvento; }
-    // public void setLugarEvento(String lugarEvento) { this.lugarEvento = lugarEvento; }
-    // public String getDireccionEvento() { return direccionEvento; }
-    // public void setDireccionEvento(String direccionEvento) { this.direccionEvento = direccionEvento; }
-    // public String getTipoEvento() { return tipoEvento; }
-    // public void setTipoEvento(String tipoEvento) { this.tipoEvento = tipoEvento; }
 
     public BigDecimal getPrecioEvento() {
         return precioEvento;
