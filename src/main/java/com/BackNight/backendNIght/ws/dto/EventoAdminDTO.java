@@ -2,13 +2,13 @@ package com.BackNight.backendNIght.ws.dto;
 
 import com.BackNight.backendNIght.ws.entity.Evento;
 import java.math.BigDecimal;
-import java.time.LocalDate; // Importar LocalDate
+// import java.time.LocalDate; // ELIMINADO: Ya no es necesario si la fecha es String
 
 public class EventoAdminDTO {
     private Integer idEvento;
     private String nombreEvento;
     private String descripcion;
-    private LocalDate fecha; // CAMBIO: Ahora es LocalDate
+    private String fecha; // CAMBIO: Ahora es String para coincidir con Evento.java
     private String hora;
     private BigDecimal precio;
     private String imagen;
@@ -20,7 +20,7 @@ public class EventoAdminDTO {
         this.idEvento = evento.getIdEvento();
         this.nombreEvento = evento.getNombreEvento();
         this.descripcion = evento.getDescripcion();
-        this.fecha = evento.getFecha(); // Esto ahora es compatible (LocalDate a LocalDate)
+        this.fecha = evento.getFecha(); // Esto ahora es compatible (String a String)
         this.hora = evento.getHora();
         this.precio = evento.getPrecio();
         this.imagen = evento.getImagen();
@@ -37,8 +37,8 @@ public class EventoAdminDTO {
     public void setNombreEvento(String nombreEvento) { this.nombreEvento = nombreEvento; }
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
-    public LocalDate getFecha() { return fecha; } // CAMBIO: Getter devuelve LocalDate
-    public void setFecha(LocalDate fecha) { this.fecha = fecha; } // CAMBIO: Setter acepta LocalDate
+    public String getFecha() { return fecha; } // CAMBIO: Getter devuelve String
+    public void setFecha(String fecha) { this.fecha = fecha; } // CAMBIO: Setter acepta String
     public String getHora() { return hora; }
     public void setHora(String hora) { this.hora = hora; }
     public BigDecimal getPrecio() { return precio; }
