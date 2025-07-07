@@ -79,16 +79,13 @@ public class ReservaService {
                 .collect(Collectors.toList());
     }
 
-    // --- NUEVO MÉTODO: Registrar reserva iniciada por el propio cliente ---
-    // Recibe el idCliente del token JWT
+    // --- MÉTODO CLAVE: Registrar reserva iniciada por el propio cliente ---
     @Transactional
     public Reserva registrarReservaParaCliente(Integer idClienteToken, Reserva reserva) {
-        // Buscar el cliente por el ID obtenido del token
         Clientes cliente = clientesRepository.findById(idClienteToken)
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado con ID del token: " + idClienteToken));
         reserva.setCliente(cliente); // Asignar el objeto Cliente completo
 
-        // Validar y buscar el evento
         if (reserva.getEvento() == null || reserva.getEvento().getIdEvento() == null) {
             throw new RuntimeException("El ID del evento es requerido para registrar una reserva.");
         }
@@ -96,7 +93,6 @@ public class ReservaService {
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado con ID: " + reserva.getEvento().getIdEvento()));
         reserva.setEvento(evento);
 
-        // Establecer valores por defecto si no se proporcionan
         if (reserva.getFechaReserva() == null) {
             reserva.setFechaReserva(LocalDate.now());
         }
@@ -107,7 +103,9 @@ public class ReservaService {
             reserva.setEstadoPago("PENDIENTE");
         }
 
-        return reservasDao.registrarReserva(reserva);
+        // --- ¡CAMBIO CRÍTICO AQUÍ! ---
+        // Llama al nuevo método saveReserva en el DAO que simplemente guarda la entidad
+        return reservasDao.saveReserva(reserva);
     }
 
 
@@ -115,6 +113,8 @@ public class ReservaService {
     // Este método sigue buscando el cliente por usuarioCliente, como antes.
     @Transactional
     public Reserva registrarReserva(Reserva reserva) {
+        // Este método ahora también se beneficia de la lógica en ReservasDao.registrarReserva
+        // que busca el cliente si no está ya asignado.
         if (reserva.getCliente() == null || reserva.getCliente().getUsuarioCliente() == null || reserva.getCliente().getUsuarioCliente().isBlank()) {
             throw new RuntimeException("El usuario del cliente es requerido para registrar una reserva.");
         }
@@ -141,7 +141,7 @@ public class ReservaService {
             reserva.setEstadoPago("PENDIENTE");
         }
 
-        return reservasDao.registrarReserva(reserva);
+        return reservasDao.registrarReserva(reserva); // Este llamará al método con lógica de búsqueda
     }
 
     @Transactional

@@ -18,7 +18,7 @@ public class ReservasDao {
     private ReservaRepository reservaRepository;
 
     @Autowired
-    private ClientesRepository clienteRepository;
+    private ClientesRepository clienteRepository; // Asegúrate de que este inyectado
 
     @Transactional(readOnly = true)
     public Reserva consultarReservaIndividual(Integer id) {
@@ -27,22 +27,39 @@ public class ReservasDao {
 
     @Transactional(readOnly = true)
     public List<Reserva> obtenerTodasReservas() {
-        return reservaRepository.findAllWithEventoAndCliente(); // Asegúrate de usar este método
+        return reservaRepository.findAllWithEventoAndCliente();
     }
 
     @Transactional(readOnly = true)
     public List<Reserva> obtenerReservasPorCliente(Integer idCliente) {
-        return reservaRepository.findByClienteIdClienteWithEvento(idCliente); // Asegúrate de usar este método
+        return reservaRepository.findByClienteIdClienteWithEvento(idCliente);
     }
 
+    /**
+     * Método para registrar una reserva.
+     * Si la entidad Reserva ya tiene un objeto Cliente asignado, lo usa.
+     * Si no, busca el cliente por usuarioCliente (para uso de admin).
+     * @param reserva La entidad Reserva a guardar.
+     * @return La Reserva guardada.
+     */
     @Transactional
     public Reserva registrarReserva(Reserva reserva) {
-        if (reserva.getCliente() != null && reserva.getCliente().getIdCliente() != null) {
-            Clientes cliente = clienteRepository.findById(reserva.getCliente().getIdCliente())
-                    .orElseThrow(() -> new RuntimeException("Cliente no encontrado con ID: " + reserva.getCliente().getIdCliente()));
+        // Si la reserva ya tiene un cliente asignado (ej. desde registrarReservaParaCliente), lo usa.
+        // De lo contrario, busca el cliente por usuarioCliente (flujo del admin).
+        if (reserva.getCliente() == null || reserva.getCliente().getIdCliente() == null) {
+            if (reserva.getCliente() == null || reserva.getCliente().getUsuarioCliente() == null || reserva.getCliente().getUsuarioCliente().isBlank()) {
+                throw new RuntimeException("El cliente o su usuario es requerido para registrar una reserva.");
+            }
+            Clientes cliente = clienteRepository.findByUsuarioCliente(reserva.getCliente().getUsuarioCliente());
+            if (cliente == null) {
+                throw new RuntimeException("Cliente no encontrado con usuario: " + reserva.getCliente().getUsuarioCliente());
+            }
             reserva.setCliente(cliente);
         } else {
-            throw new RuntimeException("El ID del cliente es requerido para registrar una reserva.");
+            // Asegurarse de que el cliente asignado es una entidad gestionada
+            Clientes clienteExistente = clienteRepository.findById(reserva.getCliente().getIdCliente())
+                    .orElseThrow(() -> new RuntimeException("Cliente asignado a la reserva no encontrado en DB con ID: " + reserva.getCliente().getIdCliente()));
+            reserva.setCliente(clienteExistente);
         }
 
         // Si el evento no está completamente cargado en la reserva, necesitas cargarlo aquí
@@ -54,7 +71,6 @@ public class ReservasDao {
         //     reserva.setEvento(evento);
         // }
 
-
         if (reserva.getEstadoPago() == null || reserva.getEstadoPago().isEmpty()) {
             reserva.setEstadoPago("PENDIENTE");
         }
@@ -62,20 +78,41 @@ public class ReservasDao {
         return reservaRepository.save(reserva);
     }
 
+    /**
+     * Nuevo método para simplemente guardar una entidad Reserva.
+     * Asume que todas las relaciones (Cliente, Evento) ya están correctamente configuradas en la entidad.
+     * @param reserva La entidad Reserva a guardar.
+     * @return La Reserva guardada.
+     */
+    @Transactional
+    public Reserva saveReserva(Reserva reserva) {
+        return reservaRepository.save(reserva);
+    }
+
+
     @Transactional
     public Reserva actualizarReserva(Reserva reserva) {
-        Optional<Reserva> existingReservaOpt = reservaRepository.findById(reserva.getIdReserva());
+        Optional<Reserva> existingReservaOpt = Optional.ofNullable(consultarReservaIndividual(reserva.getIdReserva()));
         if (existingReservaOpt.isPresent()) {
             Reserva existingReserva = existingReservaOpt.get();
 
-            if (reserva.getCliente() != null && reserva.getCliente().getIdCliente() != null &&
-                    !reserva.getCliente().getIdCliente().equals(existingReserva.getCliente().getIdCliente())) {
-                Clientes nuevoCliente = clienteRepository.findById(reserva.getCliente().getIdCliente())
-                        .orElseThrow(() -> new RuntimeException("Nuevo cliente no encontrado con ID: " + reserva.getCliente().getIdCliente()));
+            if (reserva.getCliente() != null && reserva.getCliente().getUsuarioCliente() != null &&
+                    !reserva.getCliente().getUsuarioCliente().isBlank() &&
+                    !reserva.getCliente().getUsuarioCliente().equals(existingReserva.getCliente().getUsuarioCliente())) {
+
+                Clientes nuevoCliente = clienteRepository.findByUsuarioCliente(reserva.getCliente().getUsuarioCliente());
+                if (nuevoCliente == null) {
+                    throw new RuntimeException("Nuevo cliente no encontrado con usuario: " + reserva.getCliente().getUsuarioCliente());
+                }
+                existingReserva.setCliente(nuevoCliente);
+            } else if (existingReserva.getCliente() == null && reserva.getCliente() != null && reserva.getCliente().getUsuarioCliente() != null && !reserva.getCliente().getUsuarioCliente().isBlank()) {
+                Clientes nuevoCliente = clienteRepository.findByUsuarioCliente(reserva.getCliente().getUsuarioCliente());
+                if (nuevoCliente == null) {
+                    throw new RuntimeException("Cliente no encontrado con usuario: " + reserva.getCliente().getUsuarioCliente());
+                }
                 existingReserva.setCliente(nuevoCliente);
             }
 
-            // Actualizar solo los campos que se proporcionan en el objeto 'reserva'
             if (reserva.getFechaReserva() != null) existingReserva.setFechaReserva(reserva.getFechaReserva());
             if (reserva.getEstado() != null) existingReserva.setEstado(reserva.getEstado());
             if (reserva.getEstadoPago() != null) existingReserva.setEstadoPago(reserva.getEstadoPago());
