@@ -31,12 +31,32 @@ public class ReservaService {
     @Transactional(readOnly = true)
     public ReservaDTO consultarReservaIndividualDTO(Integer id) {
         Reserva reserva = reservasDao.consultarReservaIndividual(id);
+        // DEBUG: Imprimir la entidad Reserva antes de convertir a DTO
+        if (reserva != null && reserva.getCliente() != null) {
+            System.out.println("DEBUG: Consultar Reserva Individual - Cliente ID: " + reserva.getCliente().getIdCliente() +
+                    ", Nombre: " + reserva.getCliente().getNombre() +
+                    ", Usuario: " + reserva.getCliente().getUsuarioCliente());
+        } else if (reserva != null) {
+            System.out.println("DEBUG: Consultar Reserva Individual - Cliente es NULL");
+        }
         return reserva != null ? new ReservaDTO(reserva) : null;
     }
 
     @Transactional(readOnly = true)
     public List<ReservaDTO> obtenerTodasLasReservasDTO() {
         List<Reserva> reservas = reservasDao.obtenerTodasReservas();
+        // DEBUG: Imprimir detalles de cada reserva antes de mapear a DTO
+        System.out.println("DEBUG: Obteniendo Todas las Reservas. Cantidad: " + reservas.size());
+        for (Reserva r : reservas) {
+            if (r.getCliente() != null) {
+                System.out.println("  Reserva ID: " + r.getIdReserva() +
+                        ", Cliente ID: " + r.getCliente().getIdCliente() +
+                        ", Nombre Cliente: " + r.getCliente().getNombre() +
+                        ", Usuario Cliente: " + r.getCliente().getUsuarioCliente());
+            } else {
+                System.out.println("  Reserva ID: " + r.getIdReserva() + ", Cliente es NULL");
+            }
+        }
         return reservas.stream()
                 .map(ReservaDTO::new)
                 .collect(Collectors.toList());
@@ -45,6 +65,18 @@ public class ReservaService {
     @Transactional(readOnly = true)
     public List<ReservaDTO> obtenerMisReservasDTO(Integer idCliente) {
         List<Reserva> reservas = reservasDao.obtenerReservasPorCliente(idCliente);
+        // DEBUG: Imprimir detalles de cada reserva para el cliente específico
+        System.out.println("DEBUG: Obteniendo Reservas para Cliente ID: " + idCliente + ". Cantidad: " + reservas.size());
+        for (Reserva r : reservas) {
+            if (r.getCliente() != null) {
+                System.out.println("  Reserva ID: " + r.getIdReserva() +
+                        ", Cliente ID: " + r.getCliente().getIdCliente() +
+                        ", Nombre Cliente: " + r.getCliente().getNombre() +
+                        ", Usuario Cliente: " + r.getCliente().getUsuarioCliente());
+            } else {
+                System.out.println("  Reserva ID: " + r.getIdReserva() + ", Cliente es NULL (¡Esto no debería pasar con FETCH!)");
+            }
+        }
         return reservas.stream()
                 .map(ReservaDTO::new)
                 .collect(Collectors.toList());
