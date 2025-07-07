@@ -16,8 +16,6 @@ import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/servicio")
-// Añade esta anotación aquí para permitir CORS específicamente para este controlador
-@CrossOrigin(origins = "https://nightplus.vercel.app", methods = {RequestMethod.POST, RequestMethod.OPTIONS})
 public class MercadoPagoController {
 
     private static final Logger log = LoggerFactory.getLogger(MercadoPagoController.class);
