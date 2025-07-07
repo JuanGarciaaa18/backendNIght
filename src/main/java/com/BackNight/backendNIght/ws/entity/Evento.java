@@ -3,8 +3,8 @@ package com.BackNight.backendNIght.ws.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import java.math.BigDecimal; // Importa BigDecimal
-import java.time.LocalDate; // Usar LocalDate para la fecha del evento
+import java.math.BigDecimal;
+// import java.time.LocalDate; // ¡ELIMINADO!
 import java.util.List;
 
 @Entity
@@ -19,10 +19,10 @@ public class Evento {
     private String nombreEvento;
 
     @Column(name = "descripcion", columnDefinition = "TEXT")
-    private String descripcion; // Nombre del campo es 'descripcion'
+    private String descripcion;
 
     @Column(name = "fecha")
-    private LocalDate fecha; // Tipo de dato LocalDate para la fecha del evento
+    private String fecha; // CAMBIO: Ahora es String para coincidir con VARCHAR(20) en DB
 
     @Column(name = "hora")
     private String hora;
@@ -33,17 +33,11 @@ public class Evento {
     @Column(name = "imagen", columnDefinition = "LONGTEXT")
     private String imagen;
 
-    @Column(name = "ciudad") // Nuevo campo para la ciudad
-    private String ciudad;
-
-    @Column(name = "lugar") // Nuevo campo para el lugar
-    private String lugar;
-
-    @Column(name = "direccion") // Nuevo campo para la dirección
-    private String direccion;
-
-    @Column(name = "tipo") // Nuevo campo para el tipo de evento
-    private String tipo;
+    // ¡ELIMINADOS! Estos campos no existen en tu tabla 'eventos' actual
+    // private String ciudad;
+    // private String lugar;
+    // private String direccion;
+    // private String tipo;
 
 
     // Relación con Discoteca
@@ -85,7 +79,7 @@ public class Evento {
         this.nombreEvento = nombreEvento;
     }
 
-    public String getDescripcion() { // Getter para 'descripcion'
+    public String getDescripcion() {
         return descripcion;
     }
 
@@ -93,11 +87,11 @@ public class Evento {
         this.descripcion = descripcion;
     }
 
-    public LocalDate getFecha() { // Getter para 'fecha' (LocalDate)
+    public String getFecha() { // CAMBIO: Getter devuelve String
         return fecha;
     }
 
-    public void setFecha(LocalDate fecha) {
+    public void setFecha(String fecha) { // CAMBIO: Setter acepta String
         this.fecha = fecha;
     }
 
@@ -125,37 +119,15 @@ public class Evento {
         this.imagen = imagen;
     }
 
-    public String getCiudad() { // Getter para 'ciudad'
-        return ciudad;
-    }
-
-    public void setCiudad(String ciudad) {
-        this.ciudad = ciudad;
-    }
-
-    public String getLugar() { // Getter para 'lugar'
-        return lugar;
-    }
-
-    public void setLugar(String lugar) {
-        this.lugar = lugar;
-    }
-
-    public String getDireccion() { // Getter para 'direccion'
-        return direccion;
-    }
-
-    public void setDireccion(String direccion) {
-        this.direccion = direccion;
-    }
-
-    public String getTipo() { // Getter para 'tipo'
-        return tipo;
-    }
-
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
-    }
+    // ¡ELIMINADOS! Los getters y setters para ciudad, lugar, direccion, tipo
+    // public String getCiudad() { return ciudad; }
+    // public void setCiudad(String ciudad) { this.ciudad = ciudad; }
+    // public String getLugar() { return lugar; }
+    // public void setLugar(String lugar) { this.lugar = lugar; }
+    // public String getDireccion() { return direccion; }
+    // public void setDireccion(String direccion) { this.direccion = direccion; }
+    // public String getTipo() { return tipo; }
+    // public void setTipo(String tipo) { this.tipo = tipo; }
 
     public Discoteca getDiscoteca() {
         return discoteca;

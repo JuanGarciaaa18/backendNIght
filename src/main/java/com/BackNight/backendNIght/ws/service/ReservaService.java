@@ -1,4 +1,3 @@
-// src/main/java/com/BackNight/backendNIght/ws/service/ReservaService.java
 package com.BackNight.backendNIght.ws.service;
 
 import com.BackNight.backendNIght.ws.dao.ReservasDao;
@@ -32,7 +31,6 @@ public class ReservaService {
     @Transactional(readOnly = true)
     public ReservaDTO consultarReservaIndividualDTO(Integer id) {
         Reserva reserva = reservasDao.consultarReservaIndividual(id);
-        // CORRECCIÓN AQUÍ: Usar 'reserva' (variable) en lugar de 'Reserva' (clase)
         return reserva != null ? new ReservaDTO(reserva) : null;
     }
 
@@ -44,7 +42,6 @@ public class ReservaService {
                 .collect(Collectors.toList());
     }
 
-    // --- MÉTODO CRÍTICO: ASEGÚRATE DE QUE ESTE MÉTODO ESTÉ PRESENTE ---
     @Transactional(readOnly = true)
     public List<ReservaDTO> obtenerMisReservasDTO(Integer idCliente) {
         List<Reserva> reservas = reservasDao.obtenerReservasPorCliente(idCliente);

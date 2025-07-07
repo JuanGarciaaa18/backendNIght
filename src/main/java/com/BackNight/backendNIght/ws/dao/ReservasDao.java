@@ -6,7 +6,7 @@ import com.BackNight.backendNIght.ws.repository.ClientesRepository;
 import com.BackNight.backendNIght.ws.repository.ReservaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // Importar Transactional
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,25 +20,22 @@ public class ReservasDao {
     @Autowired
     private ClientesRepository clienteRepository;
 
-    @Transactional(readOnly = true) // Añadido para operaciones de lectura
+    @Transactional(readOnly = true)
     public Reserva consultarReservaIndividual(Integer id) {
         return reservaRepository.findById(id).orElse(null);
     }
 
-    @Transactional(readOnly = true) // Añadido para operaciones de lectura
+    @Transactional(readOnly = true)
     public List<Reserva> obtenerTodasReservas() {
-        return reservaRepository.findAll();
+        return reservaRepository.findAllWithEventoAndCliente(); // Asegúrate de usar este método
     }
 
-    // --- ¡MÉTODO CRÍTICO QUE FALTABA! ---
-    // Este método es llamado por ReservaService para obtener las reservas de un cliente.
-    @Transactional(readOnly = true) // Añadido para operaciones de lectura
+    @Transactional(readOnly = true)
     public List<Reserva> obtenerReservasPorCliente(Integer idCliente) {
-        // Llama al método del repositorio que usa JOIN FETCH para cargar el evento
-        return reservaRepository.findByClienteIdClienteWithEvento(idCliente);
+        return reservaRepository.findByClienteIdClienteWithEvento(idCliente); // Asegúrate de usar este método
     }
 
-    @Transactional // Añadido para operaciones de escritura
+    @Transactional
     public Reserva registrarReserva(Reserva reserva) {
         if (reserva.getCliente() != null && reserva.getCliente().getIdCliente() != null) {
             Clientes cliente = clienteRepository.findById(reserva.getCliente().getIdCliente())
@@ -65,27 +62,18 @@ public class ReservasDao {
         return reservaRepository.save(reserva);
     }
 
-    @Transactional // Añadido para operaciones de escritura
+    @Transactional
     public Reserva actualizarReserva(Reserva reserva) {
         Optional<Reserva> existingReservaOpt = reservaRepository.findById(reserva.getIdReserva());
         if (existingReservaOpt.isPresent()) {
             Reserva existingReserva = existingReservaOpt.get();
 
-            // Si el cliente se envía para actualizar y es diferente, buscar y asignar el nuevo cliente
             if (reserva.getCliente() != null && reserva.getCliente().getIdCliente() != null &&
                     !reserva.getCliente().getIdCliente().equals(existingReserva.getCliente().getIdCliente())) {
                 Clientes nuevoCliente = clienteRepository.findById(reserva.getCliente().getIdCliente())
                         .orElseThrow(() -> new RuntimeException("Nuevo cliente no encontrado con ID: " + reserva.getCliente().getIdCliente()));
                 existingReserva.setCliente(nuevoCliente);
             }
-            // Si el evento se envía para actualizar y es diferente, buscar y asignar el nuevo evento
-            // (Necesitarías inyectar EventoRepository aquí si permites cambiar el evento de una reserva existente)
-            // if (reserva.getEvento() != null && reserva.getEvento().getIdEvento() != null &&
-            //     !reserva.getEvento().getIdEvento().equals(existingReserva.getEvento().getIdEvento())) {
-            //     Evento nuevoEvento = eventoRepository.findById(reserva.getEvento().getIdEvento())
-            //             .orElseThrow(() -> new RuntimeException("Nuevo evento no encontrado con ID: " + reserva.getEvento().getIdEvento()));
-            //     existingReserva.setEvento(nuevoEvento);
-            // }
 
             // Actualizar solo los campos que se proporcionan en el objeto 'reserva'
             if (reserva.getFechaReserva() != null) existingReserva.setFechaReserva(reserva.getFechaReserva());
@@ -101,7 +89,7 @@ public class ReservasDao {
         return null;
     }
 
-    @Transactional // Añadido para operaciones de escritura
+    @Transactional
     public Reserva actualizarEstadoPagoReserva(Integer idReserva, String nuevoEstadoPago) {
         Optional<Reserva> reservaOpt = reservaRepository.findById(idReserva);
         if (reservaOpt.isPresent()) {
@@ -112,7 +100,7 @@ public class ReservasDao {
         return null;
     }
 
-    @Transactional // Añadido para operaciones de escritura
+    @Transactional
     public boolean eliminarReserva(Integer id) {
         if (reservaRepository.existsById(id)) {
             reservaRepository.deleteById(id);
