@@ -19,6 +19,7 @@ public class ReservasService {
     @Autowired
     private ReservaService reservaService;
 
+    // Método auxiliar para extraer el ID del usuario (cliente o admin) del token JWT
     private Integer getUsuarioIdFromAuthHeader(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String token = authorizationHeader.substring(7);
@@ -32,6 +33,29 @@ public class ReservasService {
         return null;
     }
 
+    // --- Endpoint para que el CLIENTE haga su propia reserva ---
+    // Este endpoint asocia la reserva al cliente cuyo ID está en el token JWT.
+    @PostMapping("/cliente/reservar")
+    public ResponseEntity<?> registrarReservaParaCliente(@RequestBody Reserva reserva, @RequestHeader("Authorization") String authorizationHeader) {
+        Integer idCliente = getUsuarioIdFromAuthHeader(authorizationHeader);
+        if (idCliente == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No autorizado: Token inválido o ausente.");
+        }
+        try {
+            // Llama al nuevo método del servicio que usará el ID del token
+            Reserva nuevaReserva = reservaService.registrarReservaParaCliente(idCliente, reserva);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nuevaReserva);
+        } catch (RuntimeException e) {
+            System.err.println("Error al registrar reserva para cliente: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno al registrar la reserva.");
+        }
+    }
+
+
+    // --- Endpoint para obtener las reservas del cliente autenticado ---
     @GetMapping("/cliente/mis-reservas")
     public ResponseEntity<List<ReservaDTO>> getMisReservas(@RequestHeader("Authorization") String authorizationHeader) {
         try {
@@ -47,6 +71,7 @@ public class ReservasService {
         }
     }
 
+    // --- Endpoint PRIVADO (ADMIN): Obtener TODAS las reservas ---
     @GetMapping("/admin/reservas")
     public ResponseEntity<List<ReservaDTO>> obtenerTodasLasReservas(@RequestHeader("Authorization") String authorizationHeader) {
         Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
@@ -62,6 +87,8 @@ public class ReservasService {
         }
     }
 
+    // --- Endpoint PRIVADO (ADMIN): Registrar una nueva reserva (usando usuarioCliente) ---
+    // Este endpoint sigue siendo para el ADMIN, que puede especificar el usuarioCliente
     @PostMapping("/guardar-reserva")
     public ResponseEntity<Reserva> registrarReserva(@RequestBody Reserva reserva, @RequestHeader("Authorization") String authorizationHeader) {
         Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
@@ -69,10 +96,10 @@ public class ReservasService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            Reserva nuevaReserva = reservaService.registrarReserva(reserva);
+            Reserva nuevaReserva = reservaService.registrarReserva(reserva); // Llama al servicio que busca por usuarioCliente
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevaReserva);
         } catch (RuntimeException e) {
-            System.err.println("Error al registrar reserva: " + e.getMessage());
+            System.err.println("Error al registrar reserva (ADMIN): " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         } catch (Exception e) {
             e.printStackTrace();
@@ -80,6 +107,7 @@ public class ReservasService {
         }
     }
 
+    // --- Endpoint PRIVADO (ADMIN): Actualizar una reserva existente ---
     @PutMapping("/actualizar-reserva")
     public ResponseEntity<Reserva> actualizarReserva(@RequestBody Reserva reserva, @RequestHeader("Authorization") String authorizationHeader) {
         Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
@@ -101,6 +129,7 @@ public class ReservasService {
         }
     }
 
+    // --- NUEVO ENDPOINT PRIVADO (ADMIN): Actualizar el estado de pago de una reserva ---
     @PutMapping("/actualizar-estado-pago-reserva/{id}")
     public ResponseEntity<Reserva> actualizarEstadoPagoReserva(
             @PathVariable Integer id,
@@ -124,13 +153,20 @@ public class ReservasService {
         }
     }
 
+    // Clase DTO interna para el RequestBody de actualizarEstadoPagoReserva
     static class EstadoPagoRequest {
         private String estadoPago;
 
-        public String getEstadoPago() { return estadoPago; }
-        public void setEstadoPago(String estadoPago) { this.estadoPago = estadoPago; }
+        public String getEstadoPago() {
+            return estadoPago;
+        }
+
+        public void setEstadoPago(String estadoPago) {
+            this.estadoPago = estadoPago;
+        }
     }
 
+    // --- Endpoint PRIVADO (ADMIN): Eliminar una reserva ---
     @DeleteMapping("/eliminar-reserva/{id}")
     public ResponseEntity<Void> eliminarReserva(@PathVariable Integer id, @RequestHeader("Authorization") String authorizationHeader) {
         Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
@@ -149,6 +185,7 @@ public class ReservasService {
         }
     }
 
+    // --- Opcional: Endpoint Público para obtener una reserva individual (si es necesario) ---
     @GetMapping("/reserva/{id}")
     public ResponseEntity<ReservaDTO> getReservaPublico(@PathVariable Integer id) {
         try {

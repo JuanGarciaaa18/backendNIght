@@ -4,7 +4,7 @@ import com.BackNight.backendNIght.ws.dao.ReservasDao;
 import com.BackNight.backendNIght.ws.entity.Clientes;
 import com.BackNight.backendNIght.ws.entity.Evento;
 import com.BackNight.backendNIght.ws.entity.Reserva;
-import com.BackNight.backendNIght.ws.repository.ClientesRepository; // Necesario para findByUsuarioCliente
+import com.BackNight.backendNIght.ws.repository.ClientesRepository;
 import com.BackNight.backendNIght.ws.repository.EventoRepository;
 import com.BackNight.backendNIght.ws.dto.ReservaDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +23,7 @@ public class ReservaService {
     private ReservasDao reservasDao;
 
     @Autowired
-    private ClientesRepository clientesRepository; // Inyectar ClientesRepository para buscar por usuario
+    private ClientesRepository clientesRepository;
 
     @Autowired
     private EventoRepository eventoRepository;
@@ -79,9 +79,42 @@ public class ReservaService {
                 .collect(Collectors.toList());
     }
 
+    // --- NUEVO MÉTODO: Registrar reserva iniciada por el propio cliente ---
+    // Recibe el idCliente del token JWT
+    @Transactional
+    public Reserva registrarReservaParaCliente(Integer idClienteToken, Reserva reserva) {
+        // Buscar el cliente por el ID obtenido del token
+        Clientes cliente = clientesRepository.findById(idClienteToken)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado con ID del token: " + idClienteToken));
+        reserva.setCliente(cliente); // Asignar el objeto Cliente completo
+
+        // Validar y buscar el evento
+        if (reserva.getEvento() == null || reserva.getEvento().getIdEvento() == null) {
+            throw new RuntimeException("El ID del evento es requerido para registrar una reserva.");
+        }
+        Evento evento = eventoRepository.findById(reserva.getEvento().getIdEvento())
+                .orElseThrow(() -> new RuntimeException("Evento no encontrado con ID: " + reserva.getEvento().getIdEvento()));
+        reserva.setEvento(evento);
+
+        // Establecer valores por defecto si no se proporcionan
+        if (reserva.getFechaReserva() == null) {
+            reserva.setFechaReserva(LocalDate.now());
+        }
+        if (reserva.getEstado() == null || reserva.getEstado().isEmpty()) {
+            reserva.setEstado("ACTIVA");
+        }
+        if (reserva.getEstadoPago() == null || reserva.getEstadoPago().isEmpty()) {
+            reserva.setEstadoPago("PENDIENTE");
+        }
+
+        return reservasDao.registrarReserva(reserva);
+    }
+
+
+    // --- Método existente para registrar reserva (usado por ADMIN) ---
+    // Este método sigue buscando el cliente por usuarioCliente, como antes.
     @Transactional
     public Reserva registrarReserva(Reserva reserva) {
-        // CAMBIO CLAVE AQUÍ: Validar y buscar por usuarioCliente
         if (reserva.getCliente() == null || reserva.getCliente().getUsuarioCliente() == null || reserva.getCliente().getUsuarioCliente().isBlank()) {
             throw new RuntimeException("El usuario del cliente es requerido para registrar una reserva.");
         }
@@ -89,7 +122,7 @@ public class ReservaService {
         if (cliente == null) {
             throw new RuntimeException("Cliente no encontrado con usuario: " + reserva.getCliente().getUsuarioCliente());
         }
-        reserva.setCliente(cliente); // Asignar el objeto Cliente completo
+        reserva.setCliente(cliente);
 
         if (reserva.getEvento() == null || reserva.getEvento().getIdEvento() == null) {
             throw new RuntimeException("El ID del evento es requerido para registrar una reserva.");
@@ -113,33 +146,27 @@ public class ReservaService {
 
     @Transactional
     public Reserva actualizarReserva(Reserva reserva) {
-        // CORRECCIÓN AQUÍ: Usar consultarReservaIndividual en lugar de findById
         Optional<Reserva> existingReservaOpt = Optional.ofNullable(reservasDao.consultarReservaIndividual(reserva.getIdReserva()));
         if (existingReservaOpt.isPresent()) {
             Reserva existingReserva = existingReservaOpt.get();
 
-            // CAMBIO CLAVE AQUÍ: Si se proporciona un usuarioCliente en la actualización
             if (reserva.getCliente() != null && reserva.getCliente().getUsuarioCliente() != null &&
                     !reserva.getCliente().getUsuarioCliente().isBlank() &&
-                    // Solo buscar si el usuarioCliente es diferente al existente
                     !reserva.getCliente().getUsuarioCliente().equals(existingReserva.getCliente().getUsuarioCliente())) {
 
                 Clientes nuevoCliente = clientesRepository.findByUsuarioCliente(reserva.getCliente().getUsuarioCliente());
                 if (nuevoCliente == null) {
                     throw new RuntimeException("Nuevo cliente no encontrado con usuario: " + reserva.getCliente().getUsuarioCliente());
                 }
-                existingReserva.setCliente(nuevoCliente); // Asignar el nuevo objeto Cliente
+                existingReserva.setCliente(nuevoCliente);
             } else if (existingReserva.getCliente() == null && reserva.getCliente() != null && reserva.getCliente().getUsuarioCliente() != null && !reserva.getCliente().getUsuarioCliente().isBlank()) {
-                // Caso en que la reserva existente no tenía cliente pero ahora se le asigna uno
                 Clientes nuevoCliente = clientesRepository.findByUsuarioCliente(reserva.getCliente().getUsuarioCliente());
                 if (nuevoCliente == null) {
                     throw new RuntimeException("Cliente no encontrado con usuario: " + reserva.getCliente().getUsuarioCliente());
                 }
                 existingReserva.setCliente(nuevoCliente);
             }
-            // Si no se proporciona usuarioCliente o es el mismo, se mantiene el cliente existente.
 
-            // Actualizar solo los campos que se proporcionan en el objeto 'reserva'
             if (reserva.getFechaReserva() != null) existingReserva.setFechaReserva(reserva.getFechaReserva());
             if (reserva.getEstado() != null) existingReserva.setEstado(reserva.getEstado());
             if (reserva.getEstadoPago() != null) existingReserva.setEstadoPago(reserva.getEstadoPago());
