@@ -9,12 +9,15 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
+    // Esta consulta es para "Mis Reservas" del cliente, y ya hace FETCH de cliente y evento
     @Query("SELECT r FROM Reserva r LEFT JOIN FETCH r.evento e LEFT JOIN FETCH r.cliente c WHERE c.idCliente = :idCliente")
     List<Reserva> findByClienteIdClienteWithEvento(@Param("idCliente") Integer idCliente);
 
     List<Reserva> findByCliente_IdCliente(Integer idCliente);
     Optional<Reserva> findByPreferenceId(String preferenceId);
 
+    // --- ¡ESTA ES LA CONSULTA CLAVE PARA EL PANEL DE ADMINISTRADOR! ---
+    // Debe hacer FETCH del cliente para que los datos estén disponibles en el DTO
     @Query("SELECT r FROM Reserva r LEFT JOIN FETCH r.evento LEFT JOIN FETCH r.cliente")
     List<Reserva> findAllWithEventoAndCliente();
 

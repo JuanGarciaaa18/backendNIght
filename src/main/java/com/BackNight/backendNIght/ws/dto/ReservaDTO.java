@@ -16,7 +16,7 @@ public class ReservaDTO {
     private String nombreEvento; // Nombre del evento asociado
     private Integer idEvento; // ID del evento asociado
 
-    // --- CAMPOS DE CLIENTE AÑADIDOS ---
+    // --- CAMPOS DE CLIENTE CRÍTICOS ---
     private String nombreCliente;
     private String usuarioCliente;
 
@@ -36,7 +36,7 @@ public class ReservaDTO {
         this.montoTotal = reserva.getMontoTotal();
         this.preferenceId = reserva.getPreferenceId();
 
-        // Asegúrate de que el evento no sea nulo antes de acceder a sus propiedades
+        // Mapear la información del Evento
         if (reserva.getEvento() != null) {
             this.nombreEvento = reserva.getEvento().getNombreEvento();
             this.idEvento = reserva.getEvento().getIdEvento();
@@ -45,12 +45,16 @@ public class ReservaDTO {
             this.idEvento = null;
         }
 
-        // --- Mapear la información del Cliente ---
+        // --- Mapear la información del Cliente (¡CRÍTICO!) ---
         if (reserva.getCliente() != null) {
+            System.out.println("DEBUG DTO: Mapeando cliente para reserva ID " + reserva.getIdReserva() +
+                    ", Nombre: " + reserva.getCliente().getNombre() +
+                    ", Usuario: " + reserva.getCliente().getUsuarioCliente());
             this.nombreCliente = reserva.getCliente().getNombre();
             this.usuarioCliente = reserva.getCliente().getUsuarioCliente();
         } else {
-            this.nombreCliente = "N/A"; // O un valor por defecto si el cliente es nulo
+            System.out.println("DEBUG DTO: Cliente es NULL para reserva ID " + reserva.getIdReserva());
+            this.nombreCliente = "N/A";
             this.usuarioCliente = "N/A";
         }
     }
@@ -66,6 +70,6 @@ public class ReservaDTO {
     public String getPreferenceId() { return preferenceId; }
     public String getNombreEvento() { return nombreEvento; }
     public Integer getIdEvento() { return idEvento; }
-    public String getNombreCliente() { return nombreCliente; } // Nuevo getter
-    public String getUsuarioCliente() { return usuarioCliente; } // Nuevo getter
+    public String getNombreCliente() { return nombreCliente; } // Getter necesario
+    public String getUsuarioCliente() { return usuarioCliente; } // Getter necesario
 }
