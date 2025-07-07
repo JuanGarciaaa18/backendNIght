@@ -20,6 +20,8 @@ public class ReservasService {
     private ReservaService reservaService;
 
     // Método auxiliar para extraer el ID del usuario (cliente o admin) del token JWT
+    // Asumimos que JwtUtil.extractIdUsuarioFromToken devuelve el ID correcto
+    // (idCliente para clientes, idAdmin para administradores, según el rol).
     private Integer getUsuarioIdFromAuthHeader(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String token = authorizationHeader.substring(7);
@@ -34,7 +36,6 @@ public class ReservasService {
     }
 
     // --- Endpoint para que el CLIENTE haga su propia reserva ---
-    // Este endpoint asocia la reserva al cliente cuyo ID está en el token JWT.
     @PostMapping("/cliente/reservar")
     public ResponseEntity<?> registrarReservaParaCliente(@RequestBody Reserva reserva, @RequestHeader("Authorization") String authorizationHeader) {
         Integer idCliente = getUsuarioIdFromAuthHeader(authorizationHeader);
@@ -42,7 +43,6 @@ public class ReservasService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No autorizado: Token inválido o ausente.");
         }
         try {
-            // Llama al nuevo método del servicio que usará el ID del token
             Reserva nuevaReserva = reservaService.registrarReservaParaCliente(idCliente, reserva);
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevaReserva);
         } catch (RuntimeException e) {
@@ -53,7 +53,6 @@ public class ReservasService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno al registrar la reserva.");
         }
     }
-
 
     // --- Endpoint para obtener las reservas del cliente autenticado ---
     @GetMapping("/cliente/mis-reservas")
@@ -71,15 +70,17 @@ public class ReservasService {
         }
     }
 
-    // --- Endpoint PRIVADO (ADMIN): Obtener TODAS las reservas ---
+    // --- Endpoint PRIVADO (ADMIN): Obtener reservas de sus discotecas ---
+    // ¡ESTE ES EL CAMBIO CLAVE PARA EL FILTRADO DEL ADMIN!
     @GetMapping("/admin/reservas")
-    public ResponseEntity<List<ReservaDTO>> obtenerTodasLasReservas(@RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<List<ReservaDTO>> obtenerReservasAdminFiltradas(@RequestHeader("Authorization") String authorizationHeader) {
         Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
         if (adminId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            List<ReservaDTO> reservas = reservaService.obtenerTodasLasReservasDTO();
+            // Llama al nuevo método del servicio que filtra por las discotecas del admin
+            List<ReservaDTO> reservas = reservaService.obtenerReservasParaDiscotecasDelAdmin(adminId);
             return ResponseEntity.ok(reservas);
         } catch (Exception e) {
             e.printStackTrace();
@@ -88,7 +89,6 @@ public class ReservasService {
     }
 
     // --- Endpoint PRIVADO (ADMIN): Registrar una nueva reserva (usando usuarioCliente) ---
-    // Este endpoint sigue siendo para el ADMIN, que puede especificar el usuarioCliente
     @PostMapping("/guardar-reserva")
     public ResponseEntity<Reserva> registrarReserva(@RequestBody Reserva reserva, @RequestHeader("Authorization") String authorizationHeader) {
         Integer adminId = getUsuarioIdFromAuthHeader(authorizationHeader);
@@ -96,7 +96,7 @@ public class ReservasService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            Reserva nuevaReserva = reservaService.registrarReserva(reserva); // Llama al servicio que busca por usuarioCliente
+            Reserva nuevaReserva = reservaService.registrarReserva(reserva);
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevaReserva);
         } catch (RuntimeException e) {
             System.err.println("Error al registrar reserva (ADMIN): " + e.getMessage());
@@ -153,7 +153,6 @@ public class ReservasService {
         }
     }
 
-    // Clase DTO interna para el RequestBody de actualizarEstadoPagoReserva
     static class EstadoPagoRequest {
         private String estadoPago;
 
