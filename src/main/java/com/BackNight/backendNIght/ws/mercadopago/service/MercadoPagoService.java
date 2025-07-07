@@ -14,10 +14,10 @@ import com.BackNight.backendNIght.ws.mercadopago.dto.MercadoPagoCreatePreference
 import com.BackNight.backendNIght.ws.mercadopago.dto.MercadoPagoConfirmationRequest;
 import com.BackNight.backendNIght.ws.entity.Reserva;
 import com.BackNight.backendNIght.ws.entity.Evento;
-import com.BackNight.backendNIght.ws.entity.Clientes; // Asegúrate de que esta clase Cliente se llame Clientes
+import com.BackNight.backendNIght.ws.entity.Clientes;
 import com.BackNight.backendNIght.ws.repository.ReservaRepository;
 import com.BackNight.backendNIght.ws.repository.EventoRepository;
-import com.BackNight.backendNIght.ws.repository.ClientesRepository; // Asegúrate de que este repositorio sea para Clientes
+import com.BackNight.backendNIght.ws.repository.ClientesRepository;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -88,22 +88,27 @@ public class MercadoPagoService {
         log.debug("DEBUG MP SERVICE: Evento asignado a preReserva. ID Evento: {}", preReserva.getEvento().getIdEvento());
 
 
-        // 2. Asignar Cliente (¡Punto crítico!)
+        // 2. Asignar Cliente (¡Punto crítico y CORRECCIÓN aquí!)
         Integer userId = orderRequest.getReservationDetails().getUserId();
-        if (userId != null) {
-            Optional<Clientes> optionalCliente = clienteRepository.findById(userId);
-            if (optionalCliente.isEmpty()) {
-                log.warn("DEBUG MP SERVICE: Cliente no encontrado con ID: {}. La reserva se creará sin cliente asociado.", userId);
-                // Si el cliente no se encuentra, NO asignes un cliente a la reserva.
-                // preReserva.setCliente(null); // Esto ya es el valor por defecto si no se asigna
-            } else {
-                preReserva.setCliente(optionalCliente.get());
-                log.debug("DEBUG MP SERVICE: Cliente asignado a preReserva. ID Cliente: {}, Usuario: {}",
-                        preReserva.getCliente().getIdCliente(), preReserva.getCliente().getUsuarioCliente());
-            }
+        if (userId == null) {
+            // Si el userId es nulo desde el frontend, no podemos crear una reserva para un cliente.
+            // Esto debería ser manejado antes por la validación del frontend si es obligatorio,
+            // pero es una seguridad extra aquí.
+            log.error("DEBUG MP SERVICE: ID de usuario nulo en reservationDetails. No se puede crear la reserva sin un cliente asociado.");
+            throw new IllegalArgumentException("El ID de usuario es requerido para crear la reserva.");
+        }
+
+        Optional<Clientes> optionalCliente = clienteRepository.findById(userId);
+        if (optionalCliente.isEmpty()) {
+            // Si el cliente no se encuentra en la DB, LANZAMOS UNA EXCEPCIÓN.
+            // Esto asegura que la columna id_cliente nunca sea NULL si es nullable=false en la DB,
+            // y evita la creación de una reserva sin un cliente válido.
+            log.error("DEBUG MP SERVICE: Cliente no encontrado con ID: {}. No se puede crear la reserva sin un cliente válido.", userId);
+            throw new IllegalArgumentException("No se encontró un cliente válido con el ID proporcionado: " + userId);
         } else {
-            log.warn("DEBUG MP SERVICE: ID de usuario nulo en reservationDetails. La reserva se creará sin cliente asociado.");
-            // preReserva.setCliente(null); // Esto ya es el valor por defecto si no se asigna
+            preReserva.setCliente(optionalCliente.get());
+            log.debug("DEBUG MP SERVICE: Cliente asignado a preReserva. ID Cliente: {}, Usuario: {}",
+                    preReserva.getCliente().getIdCliente(), preReserva.getCliente().getUsuarioCliente());
         }
 
         // 3. Otros detalles de la reserva
@@ -194,16 +199,18 @@ public class MercadoPagoService {
                 .failure(failureUrl)
                 .build();
 
+        // Usar el ID de la reserva recién creada como external_reference para MP
+        // Esto permite que el webhook de MP encuentre la reserva correcta.
         PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                 .items(itemsMp)
                 .backUrls(backUrls)
-                .externalReference(String.valueOf(preReserva.getIdReserva()))
-                .notificationUrl("https://backnight-production.up.railway.app/servicio/mercadopago/webhook")
-                .statementDescriptor("NightPlus")
-                .binaryMode(false)
-                .expires(false)
+                .externalReference(String.valueOf(preReserva.getIdReserva())) // <--- ¡Importante: Usar el ID de la preReserva!
+                .notificationUrl("https://backnight-production.up.railway.app/servicio/mercadopago/webhook") // Asegúrate de que esta URL sea accesible públicamente y reciba POST
+                .statementDescriptor("NightPlus") // Descripción que aparece en el estado de cuenta del comprador
+                .binaryMode(false) // Modo binario: solo permite pagos aprobados o rechazados
+                .expires(false) // No expira la preferencia
                 .paymentMethods(PreferencePaymentMethodsRequest.builder()
-                        .installments(1)
+                        .installments(1) // Permite 1 cuota
                         .build())
                 .build();
 
@@ -225,6 +232,7 @@ public class MercadoPagoService {
     public Reserva confirmPaymentAndReservation(MercadoPagoConfirmationRequest confirmationRequest) {
         log.info("DEBUG MP SERVICE: Confirmación de pago recibida: {}", confirmationRequest);
 
+        // Buscar la reserva usando el preferenceId que nos envía Mercado Pago en el Webhook
         Optional<Reserva> optionalReserva = reservaRepository.findByPreferenceId(confirmationRequest.getPreferenceId());
 
         if (optionalReserva.isEmpty()) {
@@ -239,6 +247,7 @@ public class MercadoPagoService {
                 reserva.getIdReserva(), (reserva.getCliente() != null ? reserva.getCliente().getIdCliente() : "NULL"), reserva.getEstadoPago());
 
 
+        // Actualizar el estado de la reserva basado en el status de Mercado Pago
         if ("approved".equalsIgnoreCase(confirmationRequest.getStatus())) {
             reserva.setEstadoPago("Pagado");
             reserva.setEstado("Confirmada");
@@ -247,12 +256,12 @@ public class MercadoPagoService {
         } else if ("pending".equalsIgnoreCase(confirmationRequest.getStatus())) {
             reserva.setEstadoPago("Pendiente");
             reserva.setEstado("Pendiente");
-            reserva.setIdTransaccion(null);
+            reserva.setIdTransaccion(null); // No hay ID de transacción final si está pendiente
             log.info("DEBUG MP SERVICE: Reserva {} (ID MP: {}) actualizada a estado 'Pendiente'.", reserva.getIdReserva(), confirmationRequest.getCollectionId());
         } else {
             reserva.setEstadoPago("Rechazado");
             reserva.setEstado("Cancelada");
-            reserva.setIdTransaccion(null);
+            reserva.setIdTransaccion(null); // No hay ID de transacción final si es rechazado
             log.warn("DEBUG MP SERVICE: Reserva {} (ID MP: {}) actualizada a estado 'Rechazado' y 'Cancelada'.", reserva.getIdReserva(), confirmationRequest.getCollectionId());
         }
 
