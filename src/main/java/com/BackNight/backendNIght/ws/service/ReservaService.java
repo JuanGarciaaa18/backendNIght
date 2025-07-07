@@ -1,4 +1,4 @@
-// Este es el contenido que debería tener tu archivo ReservaService.java
+// src/main/java/com/BackNight/backendNIght/ws/service/ReservaService.java
 package com.BackNight.backendNIght.ws.service;
 
 import com.BackNight.backendNIght.ws.dao.ReservasDao;
@@ -32,6 +32,7 @@ public class ReservaService {
     @Transactional(readOnly = true)
     public ReservaDTO consultarReservaIndividualDTO(Integer id) {
         Reserva reserva = reservasDao.consultarReservaIndividual(id);
+        // CORRECCIÓN AQUÍ: Usar 'reserva' (variable) en lugar de 'Reserva' (clase)
         return reserva != null ? new ReservaDTO(reserva) : null;
     }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.math.BigDecimal; // Importa BigDecimal
+import java.time.LocalDate; // Usar LocalDate para la fecha del evento
 import java.util.List;
 
 @Entity
@@ -11,34 +12,49 @@ import java.util.List;
 public class Evento {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_evento") // Asegúrate de tener el @Column para id_evento
+    @Column(name = "id_evento")
     private Integer idEvento;
 
-    @Column(name = "nombre_evento") // Añadir @Column si el nombre de la columna es diferente
+    @Column(name = "nombre_evento")
     private String nombreEvento;
-    @Column(name = "descripcion", columnDefinition = "TEXT") // Asegurar mapeo correcto
-    private String descripcion;
+
+    @Column(name = "descripcion", columnDefinition = "TEXT")
+    private String descripcion; // Nombre del campo es 'descripcion'
+
     @Column(name = "fecha")
-    private String fecha;
+    private LocalDate fecha; // Tipo de dato LocalDate para la fecha del evento
+
     @Column(name = "hora")
     private String hora;
 
-    // **CAMBIO IMPORTANTE:** Usar BigDecimal para precios
     @Column(name = "precio")
     private BigDecimal precio;
 
-    @Column(name = "imagen", columnDefinition = "LONGTEXT") // Asegurar mapeo correcto
+    @Column(name = "imagen", columnDefinition = "LONGTEXT")
     private String imagen;
 
+    @Column(name = "ciudad") // Nuevo campo para la ciudad
+    private String ciudad;
+
+    @Column(name = "lugar") // Nuevo campo para el lugar
+    private String lugar;
+
+    @Column(name = "direccion") // Nuevo campo para la dirección
+    private String direccion;
+
+    @Column(name = "tipo") // Nuevo campo para el tipo de evento
+    private String tipo;
+
+
     // Relación con Discoteca
-    @ManyToOne(fetch = FetchType.LAZY) // Mantener LAZY aquí, JOIN FETCH lo cargará
-    @JoinColumn(name = "nit_discoteca", referencedColumnName = "nit", nullable = false) // ¡nullable=false si siempre debe tener discoteca!
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nit_discoteca", referencedColumnName = "nit", nullable = false)
     @JsonBackReference("discoteca-eventos")
     private Discoteca discoteca;
 
     // Relación con Administradores
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_admin", referencedColumnName = "id_admin", nullable = false) // ¡nullable=false si siempre debe tener admin!
+    @JoinColumn(name = "id_admin", referencedColumnName = "id_admin", nullable = false)
     @JsonBackReference("administrador-eventos")
     private Administradores administrador;
 
@@ -51,7 +67,8 @@ public class Evento {
     public Evento() {
     }
 
-    // --- Getters y Setters --- (Asegúrate de que todos estén, especialmente para las relaciones)
+    // --- Getters y Setters ---
+
     public Integer getIdEvento() {
         return idEvento;
     }
@@ -68,7 +85,7 @@ public class Evento {
         this.nombreEvento = nombreEvento;
     }
 
-    public String getDescripcion() {
+    public String getDescripcion() { // Getter para 'descripcion'
         return descripcion;
     }
 
@@ -76,11 +93,11 @@ public class Evento {
         this.descripcion = descripcion;
     }
 
-    public String getFecha() {
+    public LocalDate getFecha() { // Getter para 'fecha' (LocalDate)
         return fecha;
     }
 
-    public void setFecha(String fecha) {
+    public void setFecha(LocalDate fecha) {
         this.fecha = fecha;
     }
 
@@ -92,11 +109,11 @@ public class Evento {
         this.hora = hora;
     }
 
-    public BigDecimal getPrecio() { // Tipo de retorno BigDecimal
+    public BigDecimal getPrecio() {
         return precio;
     }
 
-    public void setPrecio(BigDecimal precio) { // Parámetro BigDecimal
+    public void setPrecio(BigDecimal precio) {
         this.precio = precio;
     }
 
@@ -106,6 +123,38 @@ public class Evento {
 
     public void setImagen(String imagen) {
         this.imagen = imagen;
+    }
+
+    public String getCiudad() { // Getter para 'ciudad'
+        return ciudad;
+    }
+
+    public void setCiudad(String ciudad) {
+        this.ciudad = ciudad;
+    }
+
+    public String getLugar() { // Getter para 'lugar'
+        return lugar;
+    }
+
+    public void setLugar(String lugar) {
+        this.lugar = lugar;
+    }
+
+    public String getDireccion() { // Getter para 'direccion'
+        return direccion;
+    }
+
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public String getTipo() { // Getter para 'tipo'
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
     }
 
     public Discoteca getDiscoteca() {
