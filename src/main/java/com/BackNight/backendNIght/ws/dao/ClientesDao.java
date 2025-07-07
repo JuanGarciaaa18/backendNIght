@@ -5,7 +5,7 @@ import com.BackNight.backendNIght.ws.repository.ClientesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional; // Importar
 
 import java.util.List;
 import java.util.Optional;
@@ -14,58 +14,64 @@ import java.util.Optional;
 public class ClientesDao {
 
     @Autowired
-    private ClientesRepository clientesRepository;
-
+    private ClientesRepository clienteRepository;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-    @Transactional
+    @Transactional // Añadido para operaciones de escritura
     public Clientes registrarCliente(Clientes cliente) {
-        if (clientesRepository.findByCorreo(cliente.getCorreo()) != null) {
-            throw new RuntimeException("El correo ya está registrado.");
-        }
-        if (clientesRepository.findByUsuarioCliente(cliente.getUsuarioCliente()) != null) {
-            throw new RuntimeException("El nombre de usuario ya está en uso.");
-        }
         cliente.setContrasenaCliente(passwordEncoder.encode(cliente.getContrasenaCliente()));
-        return clientesRepository.save(cliente);
+        return clienteRepository.save(cliente);
     }
 
-    @Transactional
-    public Clientes actualizarCliente(Clientes cliente) {
-        return clientesRepository.save(cliente);
-    }
-
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true) // Añadido para operaciones de lectura
     public Clientes obtenerPorCorreo(String correo) {
-        return clientesRepository.findByCorreo(correo);
+        return clienteRepository.findByCorreo(correo);
     }
 
-    @Transactional
-    public void actualizarContrasena(Clientes cliente, String nuevaContrasena) {
-        cliente.setContrasenaCliente(passwordEncoder.encode(nuevaContrasena));
-        clientesRepository.save(cliente);
+    @Transactional(readOnly = true) // Añadido para operaciones de lectura
+    public Clientes obtenerPorUsuario(String usuarioCliente) {
+        return clienteRepository.findByUsuarioCliente(usuarioCliente);
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Clientes> findById(Integer idCliente) {
-        return clientesRepository.findById(idCliente);
-    }
-
-    // --- MÉTODO CLAVE PARA EL LOGIN ---
-    @Transactional(readOnly = true)
-    public Clientes loginClientes(String usuarioCliente, String contrasena) {
-        // Busca al cliente por su nombre de usuario
-        Clientes cliente = clientesRepository.findByUsuarioCliente(usuarioCliente);
-
-        if (cliente != null) {
-            // Compara la contraseña proporcionada con la contraseña cifrada
-            if (passwordEncoder.matches(contrasena, cliente.getContrasenaCliente())) {
-                return cliente; // Credenciales correctas
-            }
+    @Transactional // Añadido para operaciones de escritura
+    public Clientes actualizarContrasena(Clientes cliente, String nuevaContrasena) {
+        if (cliente.getIdCliente() == null || !clienteRepository.existsById(cliente.getIdCliente())) {
+            throw new IllegalArgumentException("Cliente inválido para actualizar la contraseña: ID no encontrado.");
         }
-        return null; // Usuario no encontrado o contraseña incorrecta
+        cliente.setContrasenaCliente(passwordEncoder.encode(nuevaContrasena));
+        return clienteRepository.save(cliente);
     }
 
-    // ... (otros métodos si los tienes) ...
+    @Transactional(readOnly = true) // Añadido para operaciones de lectura
+    public Clientes loginClientes(String usuarioCliente, String contrasenaCliente) {
+        Clientes cliente = clienteRepository.findByUsuarioCliente(usuarioCliente);
+        if (cliente != null && passwordEncoder.matches(contrasenaCliente, cliente.getContrasenaCliente())) {
+            return cliente;
+        }
+        return null;
+    }
+
+    @Transactional(readOnly = true) // Añadido para operaciones de lectura
+    public List<Clientes> obtenerTodos() {
+        return clienteRepository.findAll();
+    }
+
+    @Transactional // Añadido para operaciones de escritura
+    public Clientes actualizarCliente(Clientes cliente) {
+        if (cliente.getIdCliente() != null && clienteRepository.existsById(cliente.getIdCliente())) {
+            return clienteRepository.save(cliente);
+        }
+        return null;
+    }
+
+    @Transactional(readOnly = true) // Añadido para operaciones de lectura
+    public Optional<Clientes> findById(Integer idCliente) {
+        return clienteRepository.findById(idCliente);
+    }
+
+    @Transactional // Añadido para operaciones de escritura
+    public void eliminarCliente(Integer idCliente) {
+        clienteRepository.deleteById(idCliente);
+    }
 }
