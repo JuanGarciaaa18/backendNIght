@@ -31,8 +31,9 @@ public class Reserva {
     @Column(name = "preference_id")
     private String preferenceId;
 
+    // --- CAMBIO CLAVE AQUÍ: nullable = false ---
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_cliente")
+    @JoinColumn(name = "id_cliente", nullable = false) // ¡Asegura que id_cliente no sea nulo en la BD!
     @JsonBackReference("cliente-reservas")
     private Clientes cliente;
 
